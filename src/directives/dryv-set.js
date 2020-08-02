@@ -18,76 +18,71 @@ function hashCode(text) {
 }
 
 async function validate(component, clientContext) {
-    const result = await this.$dryv.validate();
-    if (!result.hasErrors) {
-        const result = await axios.post(form.action, this.$data);
-        this.$dryv.setValidationResult(result.data.messages);
-        const $dryv = component.$dryv;
-        const context = Object.assign({ dryv: $dryv }, clientContext);
-        const formValidators = $dryv.formValidators;
+    const $dryv = component.$dryv;
+    const context = Object.assign({ dryv: $dryv }, clientContext);
+    const formValidators = $dryv.formValidators;
 
-        if (!formValidators) {
-            return true;
-        }
+    if (!formValidators) {
+        return true;
+    }
 
-        if ($dryv.groupComponents) {
-            $dryv.groupComponents.forEach(c => c.clear());
-        }
+    if ($dryv.groupComponents) {
+        $dryv.groupComponents.forEach(c => c.clear());
+    }
 
-        const disablers = $dryv.v.disablers;
-        const disabledFields = [];
+    const disablers = $dryv.v.disablers;
+    const disabledFields = [];
 
-        if (disablers) {
-            for (let field of Object.keys(disablers)) {
-                const disabler = disablers[field];
-                if (!disabler) {
-                    continue;
-                }
-
-                var validationFunctions = disabler.filter(v => v.validate(component.$data));
-
-                if (validationFunctions.length) {
-                    disabledFields.push(field + ".");
-                }
-            }
-        }
-
-        let errors = "";
-        let warnings = "";
-
-        for (let v of formValidators) {
-            const result = await v.validate(disabledFields, context);
-            if (!result) {
+    if (disablers) {
+        for (let field of Object.keys(disablers)) {
+            const disabler = disablers[field];
+            if (!disabler) {
                 continue;
             }
 
-            switch (typeof result) {
-                case "object":
-                    switch (result.type) {
-                        case "error":
-                            errors += `${v.path}=${result.text};`;
-                            break;
-                        case "warning":
-                            warnings += `${v.path}=${result.text};`;
-                            break;
-                    }
-                    break;
-                case "string":
-                    errors += `${v.path}=${result};`;
-                    break;
+            var validationFunctions = disabler.filter(v => v.validate(component.$data));
+
+            if (validationFunctions.length) {
+                disabledFields.push(field + ".");
             }
         }
-
-        $dryv._lastDisabledFields = disabledFields || null;
-        $dryv._lastContext = context;
-
-        return {
-            hasErrors: errors.length > 0,
-            errorHash: hashCode(errors),
-            hasWarnings: warnings.length > 0,
-            warningHash: hashCode(warnings)
-        };
     }
+
+    let errors = "";
+    let warnings = "";
+
+    for (let v of formValidators) {
+        const result = await v.validate(disabledFields, context);
+        if (!result) {
+            continue;
+        }
+
+        switch (typeof result) {
+            case "object":
+                switch (result.type) {
+                    case "error":
+                        errors += `${v.path}=${result.text};`;
+                        break;
+                    case "warning":
+                        warnings += `${v.path}=${result.text};`;
+                        break;
+                }
+                break;
+            case "string":
+                errors += `${v.path}=${result};`;
+                break;
+        }
+    }
+
+    $dryv._lastDisabledFields = disabledFields || null;
+    $dryv._lastContext = context;
+
+    return {
+        hasErrors: errors.length > 0,
+        errorHash: hashCode(errors),
+        hasWarnings: warnings.length > 0,
+        warningHash: hashCode(warnings)
+    };
 }
 
 function setValidationResult(component, results) {
