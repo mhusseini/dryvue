@@ -19,3 +19,8 @@ steps:
 #   inputs:
 #     command: 'publish'
 #     publishEndpoint: 'npm.org'
+- task: Npm@1
+  inputs:
+    command: 'publish'
+    publishRegistry: 'useFeed'
+    publishFeed: '218da33c-9e6e-4d3f-bd06-17943f115076/5ae8c143-7c99-400a-88ba-19842033edfd'
