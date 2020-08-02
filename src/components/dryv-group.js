@@ -5,22 +5,18 @@ data(){
     return{
         groups:{
             "group1": {
-                warnings: [].
-                errors: [].
+                groupWarnings: [].
+                groupErrors: [].
             },
             ...
         }
     }
 },
 computed{
-    errors(){ return [].concat.apply([], Object.entities(this.groups).map(g=>g.errors)) },
+    groupErrors(){ return [].concat.apply([], Object.entities(this.groups).map(g=>g.groupErrors)) },
     ..
 }
 */
-
-function flattenItems(items) {
-    return Object.keys(items).map(k => items[k]);
-}
 
 function clearItems(items, group, component) {
     if (items && group && items[group]) {
@@ -38,30 +34,30 @@ export default function (options) {
     return {
         data() {
             return {
-                errors: {},
-                warnings: {}
+                groupErrors: {},
+                groupWarnings: {}
             };
         },
         computed: {
-            allErrors() {
-                return Object.entries(this.errors).map(values => values[1]);
+            errors() {
+                return Object.entries(this.groupErrors).map(values => ({ group: values[0], text: values[1] }));
             },
-            allWarnings() {
-                return Object.entries(this.warnings).map(values => values[1]);
+            warnings() {
+                return Object.entries(this.groupWarnings).map(values => ({ group: values[0], text: values[1] }));
             }
         },
         methods: {
             clear(group) {
-                clearItems(this.errors, group, this);
-                clearItems(this.warnings, group, this);
+                clearItems(this.groupErrors, group, this);
+                clearItems(this.groupWarnings, group, this);
             },
             addError(text, group) {
-                addResultItem(this.errors, text, group, this);
+                addResultItem(this.groupErrors, text, group, this);
             },
             addWarning(text, group) {
-                addResultItem(this.warnings, text, group, this);
+                addResultItem(this.groupWarnings, text, group, this);
             }
         },
-        template: "<div><slot :errors='errors' :warnings='warnings' :allErrors='allErrors' :allWarnings='allWarnings'></slot></div>"
+        template: "<div><slot :groupErrors='groupErrors' :groupWarnings='groupWarnings' :errors='errors' :warnings='warnings'></slot></div>"
     }
 }
