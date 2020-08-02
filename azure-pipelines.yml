@@ -23,3 +23,7 @@ steps:
     command: 'custom'
     customCommand: 'run build'
 
+- task: Npm@1
+  inputs:
+    command: 'publish'
+    publishEndpoint: 'npm.org'
