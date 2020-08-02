@@ -1,5 +1,4 @@
 # dryvue
-**Complex model validation for server and client made easy.**
 
 Dryv client-side components for Vue.js.
 
