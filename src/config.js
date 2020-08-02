@@ -3,18 +3,26 @@ function valueOfDate(value, locale, format) {
 }
 
 const defaultOptions = {
-    global: window || global,
+    global: typeof window !== 'undefined'
+        ? window
+        : typeof global !== 'undefined'
+            ? global
+            : null,
     valueOfDate: valueOfDate,
-    get: fetch,
-    post: (url, data) => fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-        body: JSON.stringify(data),
-    }),
     errorField: "error",
     warningField: "warning",
     hasErrorField: "hasError"
 };
+
+if(typeof fetch !== 'undefined')
+{
+    defaultOptions.get = fetch;
+    defaultOptions.post = (url, data) => fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify(data),
+    });
+}
 
 export default {
     dryvGroupTag: "dryv-group",

@@ -1,7 +1,8 @@
+import config from "../config";
 import readSet from "../validationSetReader"
 
-function copyRules($dryv, name) {
-    const validationSet = readSet(name);
+function copyRules($dryv, name, options) {
+    const validationSet = readSet(name, options);
     $dryv.v = validationSet;
     $dryv.params = validationSet.parameters;
 }
@@ -101,7 +102,7 @@ function initializeFormComponent(component, name, path, options) {
 
     const d = component.$dryv;
     d.path = path;
-    copyRules(d, name);
+    copyRules(d, name, options);
 
     if (!d.formValidators) {
         d.formValidators = [];
@@ -122,7 +123,7 @@ export default function (o) {
         inserted: function (el, binding, vnode) {
             const component = vnode.context;
             if (!component) {
-                throw `The ${dryvSetDirective} directive can only be applied to components.`;
+                throw `The ${config.dryvSetDirective} directive can only be applied to components.`;
             }
 
             let name;
@@ -141,10 +142,10 @@ export default function (o) {
             }
 
             if (!name) {
-                throw `Form name is missing. Please specify a value for the ${dryvSetDirective} attribute.`;
+                throw `Form name is missing. Please specify a value for the ${config.dryvSetDirective} attribute.`;
             }
 
-            initializeFormComponent(component, name, path, options, Vue);
+            initializeFormComponent(component, name, path, options);
         }
     }
 }

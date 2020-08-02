@@ -1,7 +1,8 @@
 import readSet from "../validationSetReader"
-import config from "../config";
+import config from "../config"
+import Vue from "vue"
 
-function handleValidationResult(Vue, component, result, errorField, warningField, hasErrorField, groupComponent) {
+function handleValidationResult(component, result, errorField, warningField, hasErrorField, groupComponent) {
     let type = null;
     let group = null;
     let text = null;
@@ -72,10 +73,10 @@ function findFormComponent(vnode) {
         if (!formComponent &&
             component._vnode && component._vnode.data &&
             component._vnode.data.directives &&
-            component._vnode.data.directives.filter(d => d.name === dryvSetDirective).length > 0) {
+            component._vnode.data.directives.filter(d => d.name === config.dryvSetDirective).length > 0) {
             formComponent = component;
         }
-        else if (!groupComponent && component.$vnode && component.$vnode.componentOptions.tag === dryvGroupTag) {
+        else if (!groupComponent && component.$vnode && component.$vnode.componentOptions.tag === config.dryvGroupTag) {
             groupComponent = component;
         }
 
@@ -101,8 +102,8 @@ function findModelExpression(vnode) {
 
     return null;
 }
-function copyRules($dryv, name) {
-    const validationSet = readSet(name);
+function copyRules($dryv, name, options) {
+    const validationSet = readSet(name, options);
 
     $dryv.v = validationSet;
     $dryv.params = validationSet.parameters;
@@ -120,7 +121,7 @@ export default function (o) {
             const formComponent = components.formComponent;
 
             if (!formComponent) {
-                Vue.util.warn(`No component found with a ${dryvSetDirective} directive.`);
+                Vue.util.warn(`No component found with a ${config.dryvSetDirective} directive.`);
                 return;
             }
 
@@ -130,7 +131,7 @@ export default function (o) {
                     namedValidators: {}
                 }, options);
 
-                const directive = formComponent._vnode.data.directives.filter(d => d.name === dryvSetDirective)[0].value;
+                const directive = formComponent._vnode.data.directives.filter(d => d.name === config.dryvSetDirective)[0].value;
 
                 if (typeof directive === "object") {
                     formComponent.$dryv.path = directive.path;
@@ -139,7 +140,7 @@ export default function (o) {
                     formComponent.$dryv.path = directive;
                 }
 
-                copyRules(formComponent.$dryv, formComponent.$dryv.path);
+                copyRules(formComponent.$dryv, formComponent.$dryv.path, options);
             }
 
             const $dryv = formComponent.$dryv;
@@ -254,7 +255,7 @@ export default function (o) {
                             }
                         }
 
-                        return handleValidationResult(Vue, component, result, errorField, warningField, hasErrorField, groupComponent);
+                        return handleValidationResult(component, result, errorField, warningField, hasErrorField, groupComponent);
                     }
                     finally {
                         fieldValidator.isValidating = false;
@@ -262,7 +263,7 @@ export default function (o) {
                 },
                 setResults: results => {
                     const result = results && results[path];
-                    return handleValidationResult(Vue, component, result, errorField, warningField, hasErrorField, groupComponent);
+                    return handleValidationResult(component, result, errorField, warningField, hasErrorField, groupComponent);
                 }
             };
 

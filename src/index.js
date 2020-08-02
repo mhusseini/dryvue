@@ -1,8 +1,8 @@
-import config from "./src/config";
-import mixin from "./src/mixin";
-import dryvGroupComponent from "./src/components/dryv-group";
-import dryvSetDirective from "./src/directives/dryv-set";
-import dryvDirective from "./src/directives/dryv";
+import config from "./config";
+import mixin from "./mixin";
+import dryvGroupComponent from "./components/dryv-group";
+import dryvSetDirective from "./directives/dryv-set";
+import dryvDirective from "./directives/dryv";
 
 export default {
     mixin,

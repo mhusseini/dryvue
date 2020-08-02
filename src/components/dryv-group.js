@@ -1,3 +1,4 @@
+import Vue from "vue"
 // TODO: change data object to something liek:
 /*
 data(){

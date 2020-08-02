@@ -4,4 +4,5 @@ export default function (name, options) {
     if (!validationSet) {
         throw `No validation set with name '${name}' was found on the Dryv object supplied with the options.`;
     }
+    return validationSet;
 }
