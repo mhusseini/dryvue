@@ -19,21 +19,18 @@ computed{
 */
 
 function flattenItems(items) {
-    return [].concat.apply([], Object.keys(items).map(k => items[k]));
+    return Object.keys(items).map(k => items[k]);
 }
 
-function clearItems(items, group) {
-    Object.keys(items).filter(k => !!group || k === group).map(k => items[k]).forEach(l => l.splice(0));
-}
-
-function addResultItem(items, text, group) {
-    if (!items[group]) {
-        Vue.set(items, group, []);
+function clearItems(items, group, component) {
+    if (items && group && items[group]) {
+        component.$set(items, group, null);
     }
+}
 
-    const texts = items[group];
-    if (texts.indexOf(text) < 0) {
-        texts.push(text);
+function addResultItem(items, text, group, component) {
+    if (items && group) {
+        component.$set(items, group, text);
     }
 }
 
@@ -47,22 +44,22 @@ export default function (options) {
         },
         computed: {
             allErrors() {
-                return flattenItems(this.errors);
+                return Object.entries(this.errors).map(values => values[1]);
             },
             allWarnings() {
-                return flattenItems(this.warnings);
+                return Object.entries(this.warnings).map(values => values[1]);
             }
         },
         methods: {
             clear(group) {
-                clearItems(this.errors, group);
-                clearItems(this.warnings, group);
+                clearItems(this.errors, group, this);
+                clearItems(this.warnings, group, this);
             },
             addError(text, group) {
-                addResultItem(this.errors, text, group);
+                addResultItem(this.errors, text, group, this);
             },
             addWarning(text, group) {
-                addResultItem(this.warnings, text, group);
+                addResultItem(this.warnings, text, group, this);
             }
         },
         template: "<div><slot :errors='errors' :warnings='warnings' :allErrors='allErrors' :allWarnings='allWarnings'></slot></div>"

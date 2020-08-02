@@ -24,16 +24,29 @@ function handleValidationResult(component, result, errorField, warningField, has
     const error = type === "error" && text;
     const warning = type === "warning" && text;
 
+    if (!component.$dryv._lastGroups) {
+        component.$dryv._lastGroups = [];
+    }
+
+    const lastGroups = component.$dryv._lastGroups;
+
     if (group && groupComponent) {
         error && groupComponent.addError(error, group);
         warning && groupComponent.addWarning(warning, group, this);
         Vue.set(component, errorField, null);
         Vue.set(component, warningField, null);
         Vue.set(component, hasErrorField, true);
+
+        if (lastGroups.indexOf(group) < 0) {
+            lastGroups.push(group);
+        }
     } else {
         Vue.set(component, errorField, error);
         Vue.set(component, warningField, warning);
         Vue.set(component, hasErrorField, false);
+
+        lastGroups.forEach(g => groupComponent.clear(g));
+        component.$dryv._lastGroups = [];
     }
 
     return text && { type, text, group };
@@ -243,10 +256,6 @@ export default function (o) {
                         let result = null;
                         const isEnabled = !disabledFields || disabledFields.filter(f => path.indexOf(f) >= 0).length === 0;
                         if (isEnabled) {
-                            if (validateRelated) {
-                                const groups = validators.map(v => v.group).filter(g => !!g);
-                                groups.forEach(g => groupComponent.clear(g));
-                            }
                             const validationFunctions = validators.map(v => v.validate);
                             result = await runValidation(validationFunctions, data, context2);
                             if (validateRelated) {
