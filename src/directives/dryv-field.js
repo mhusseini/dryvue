@@ -2,7 +2,7 @@ import readSet from "../validationSetReader"
 import config from "../config"
 import Vue from "vue"
 
-function handleValidationResult(component, result, errorField, warningField, hasErrorField, groupComponent) {
+function handleValidationResult(component, result, directiveOptions, groupComponent) {
     let type = null;
     let group = null;
     let text = null;
@@ -33,17 +33,17 @@ function handleValidationResult(component, result, errorField, warningField, has
     if (group && groupComponent) {
         error && groupComponent.addError(error, group);
         warning && groupComponent.addWarning(warning, group, this);
-        Vue.set(component, errorField, null);
-        Vue.set(component, warningField, null);
-        Vue.set(component, hasErrorField, true);
+        Vue.set(component, directiveOptions.errorField, null);
+        Vue.set(component, directiveOptions.warningField, null);
+        Vue.set(component, directiveOptions.hasErrorField, true);
 
         if (lastGroups.indexOf(group) < 0) {
             lastGroups.push(group);
         }
     } else {
-        Vue.set(component, errorField, error);
-        Vue.set(component, warningField, warning);
-        Vue.set(component, hasErrorField, false);
+        Vue.set(component, directiveOptions.errorField, error);
+        Vue.set(component, directiveOptions.warningField, warning);
+        Vue.set(component, directiveOptions.hasErrorField, false);
 
         lastGroups.forEach(g => groupComponent.clear(g));
         component.$dryv._lastGroups = [];
@@ -115,6 +115,33 @@ function findModelExpression(vnode) {
 
     return null;
 }
+
+function readConfigurationFromBinding(binding, options, $dryv) {
+    let path = null;
+    let errorField = options.errorField;
+    let warningField = options.warningField;
+    let hasErrorField = options.hasErrorField;
+
+    switch (typeof binding.value) {
+        case "object":
+            errorField = binding.value.errorField || errorField;
+            warningField = binding.value.warningField || warningField;
+            hasErrorField = binding.value.hasErrorField || hasErrorField;
+            path = binding.value.path;
+            break;
+        case "string":
+            path = binding.value;
+            break;
+    }
+
+    return {
+        path,
+        errorField,
+        warningField,
+        hasErrorField
+    };
+}
+
 function copyRules($dryv, name, options) {
     const validationSet = readSet(name, options);
 
@@ -168,37 +195,23 @@ export default function (o) {
                 }
             }
 
-            let path = null;
-            let errorField = options.errorField;
-            let warningField = options.warningField;
-            let hasErrorField = options.hasErrorField;
+            const directiveOptions = readConfigurationFromBinding(binding, options, $dryv);
 
-            switch (typeof binding.value) {
-                case "object":
-                    errorField = binding.value.errorField || options.errorField;
-                    warningField = binding.value.warningField || options.warningField;
-                    path = binding.value.path;
-                    break;
-                case "string":
-                    path = binding.value;
-                    break;
+            if (!directiveOptions.path) {
+                directiveOptions.path = findModelExpression(vnode);
             }
 
-            if (!path) {
-                path = findModelExpression(vnode);
-            }
-
-            if (!path) {
+            if (!directiveOptions.path) {
                 throw `The property path is missing. Please specify a value for the ${dryvFieldDirective} attribute or use the ${dryvFieldDirective} directive in combination with 'v-model'. Example value: 'firstName' or 'child.firstName'.`;
             }
 
             if ($dryv.path) {
-                path = path.substr($dryv.path.length + 1);
+                directiveOptions.path = directiveOptions.path.substr($dryv.path.length + 1);
             }
 
-            initializeFieldComponent(formComponent, component, path);
+            initializeFieldComponent(formComponent, component, directiveOptions.path);
 
-            const validators = $dryv.v.validators[path];
+            const validators = $dryv.v.validators[directiveOptions.path];
             if (!validators) {
                 return;
             }
@@ -215,23 +228,23 @@ export default function (o) {
                 Vue.set(component, annotationName, annotations[annotationName]);
             }
 
-            if (component.$data.hasOwnProperty(errorField)) {
-                Vue.set(component, errorField, null);
+            if (component.$data.hasOwnProperty(directiveOptions.errorField)) {
+                Vue.set(component, directiveOptions.errorField, null);
             }
             else {
-                throw new `Please specify the data property ${errorField} on the form input component.`;
+                throw new `Please specify the data property ${directiveOptions.errorField} on the form input component.`;
             }
 
-            if (component.$data.hasOwnProperty(warningField)) {
-                Vue.set(component, warningField, null);
+            if (component.$data.hasOwnProperty(directiveOptions.warningField)) {
+                Vue.set(component, directiveOptions.warningField, null);
             }
             else {
-                throw new `Please specify the data property ${warningField} on the form input component.`;
+                throw new `Please specify the data property ${directiveOptions.warningField} on the form input component.`;
             }
 
             const fieldValidator = {
                 isValidating: false,
-                path,
+                path: directiveOptions.path,
                 validate: async (disabledFields, context, validateRelated) => {
                     if (validators === undefined) {
                         return null;
@@ -254,7 +267,7 @@ export default function (o) {
                         context2.component = formComponent;
 
                         let result = null;
-                        const isEnabled = !disabledFields || disabledFields.filter(f => path.indexOf(f) >= 0).length === 0;
+                        const isEnabled = !disabledFields || disabledFields.filter(f => directiveOptions.path.indexOf(f) >= 0).length === 0;
                         if (isEnabled) {
                             const validationFunctions = validators.map(v => v.validate);
                             result = await runValidation(validationFunctions, data, context2);
@@ -264,20 +277,20 @@ export default function (o) {
                             }
                         }
 
-                        return handleValidationResult(component, result, errorField, warningField, hasErrorField, groupComponent);
+                        return handleValidationResult(component, result, directiveOptions, groupComponent);
                     }
                     finally {
                         fieldValidator.isValidating = false;
                     }
                 },
                 setResults: results => {
-                    const result = results && results[path];
-                    return handleValidationResult(component, result, errorField, warningField, hasErrorField, groupComponent);
+                    const result = results && results[directiveOptions.path];
+                    return handleValidationResult(component, result, directiveOptions, groupComponent);
                 }
             };
 
             component.$dryv.formValidators.push(fieldValidator);
-            $dryv.namedValidators[path] = fieldValidator;
+            $dryv.namedValidators[directiveOptions.path] = fieldValidator;
             $dryv.formValidators.push(fieldValidator);
         }
     }

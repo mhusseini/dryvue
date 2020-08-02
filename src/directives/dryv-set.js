@@ -18,6 +18,10 @@ function hashCode(text) {
 }
 
 async function validate(component, clientContext) {
+    const result = await this.$dryv.validate();
+    if (!result.hasErrors) {
+        const result = await axios.post(form.action, this.$data);
+        this.$dryv.setValidationResult(result.data.messages);  
     const $dryv = component.$dryv;
     const context = Object.assign({ dryv: $dryv }, clientContext);
     const formValidators = $dryv.formValidators;
