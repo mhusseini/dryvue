@@ -28,15 +28,6 @@ Vue.use(Dryvue, {
 })
 
 ```
-# Options
-Option | Type |Description | Default Value
--------|------|------------|--------------
-get|function(url)|A method that performs an HTTP GET operation and returns the result or a promise.|fetch API
-post|function(url, dataObject)|A method that performs an HTTP POST operation and returns the result or a promise.|fetch API
-valueOfDate|function(dateString, locale, format)|A function that returns a numeric representation of the specified date. The date is formatted as a string with it's locale and format pattern given with the respective arguments.|```new Date(value).getTime()``` 
-errorField|string|The name of the data field on the component to write error messages to. |```"error"``` 
-warningField|string|The name of the data field on the component to write warning messages to.|```"warning"``` 
-hasErrorField|string|The name of the data field on the component that indicates whether a validation error has ocurred.|```"hasError"``` 
 
 The `dryv-set` directive is used to mark a component as a form to validate with Dryvue. This directive can be placed on any Vue component that contains further form field components. The form field component must be marked with the `dryv` directive. As a minimum, `dryv-set` takes the name of the validation set as argument.
 ```html
@@ -92,7 +83,16 @@ export default {
 
 </script>
 ```
-
+# Options
+Option | Type |Description | Default Value
+-------|------|------------|--------------
+get|function(url)|A method that performs an HTTP GET operation and returns the result or a promise.|fetch API
+post|function(url, dataObject)|A method that performs an HTTP POST operation and returns the result or a promise.|fetch API
+valueOfDate|function(dateString, locale, format)|A function that returns a numeric representation of the specified date. The date is formatted as a string with it's locale and format pattern given with the respective arguments.|```new Date(value).getTime()``` 
+errorField|string|The name of the data field on the component to write error messages to. |```"error"``` 
+warningField|string|The name of the data field on the component to write warning messages to.|```"warning"``` 
+hasErrorField|string|The name of the data field on the component that indicates whether a validation error has ocurred.|```"hasError"``` 
+global|string|An object that contains the global Dryv instance.| `window`in browsers, otherwise empty.
 ## Directive *dryv-set*
 
 Option | Type |Description | Default Value
