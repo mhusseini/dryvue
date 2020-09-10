@@ -33,6 +33,12 @@ async function validate(component, clientContext) {
     const disablers = $dryv.v.disablers;
     const disabledFields = [];
 
+    let data = component.$data;
+
+    if ($dryv.path) {
+        $dryv.path.split(".").forEach(p => data = data[p]);
+    }
+
     if (disablers) {
         for (let field of Object.keys(disablers)) {
             const disabler = disablers[field];
@@ -40,7 +46,7 @@ async function validate(component, clientContext) {
                 continue;
             }
 
-            var validationFunctions = disabler.filter(v => v.validate(component.$data));
+            var validationFunctions = disabler.filter(v => v.validate(data));
 
             if (validationFunctions.length) {
                 disabledFields.push(field + ".");
