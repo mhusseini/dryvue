@@ -35,11 +35,6 @@ export default {
         }
 
         const options = Object.assign({}, defaultOptions, o);
-        if (!options.handleResult) {
-            options.handleResult = function (context, model, path, ruleName, result) {
-                return context && context.handleResult ? context.handleResult(context, model, path, ruleName, result) : result;
-            };
-        }
         if (!options.callServer) {
             options.callServer = async function (baseUrl, method, data) {
                 const isGet = method === "GET";

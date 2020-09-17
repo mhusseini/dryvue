@@ -124,7 +124,6 @@ function initializeFormComponent(component, name, path, options) {
 }
 
 export default function (o) {
-    const options = config.createOptions(o);
     return {
         inserted: function (el, binding, vnode) {
             const component = vnode.context;
@@ -149,6 +148,20 @@ export default function (o) {
 
             if (!name) {
                 throw `Form name is missing. Please specify a value for the ${config.dryvSetDirective} attribute.`;
+            }
+
+            const options = config.createOptions(o);
+            const pathPrefix = path ? path + "." : "";
+
+            if (!options.handleResult) {
+                options.handleResult = function (context, model, p, ruleName, result) {
+                    return context && context.handleResult ? context.handleResult(context, model, pathPrefix + p, ruleName, result) : result;
+                };
+            } else {
+                const inner = options.handleResult;
+                options.handleResult = function (context, model, p, ruleName, result) {
+                    return inner(context, model, pathPrefix + p, ruleName, result);
+                }
             }
 
             initializeFormComponent(component, name, path, options);

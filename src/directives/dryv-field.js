@@ -60,13 +60,13 @@ function runValidation(v, m, context) {
     }, Promise.resolve());
 }
 
-function initializeFieldComponent(formComponent, component, path) {
+function initializeFieldComponent(formComponent, component, path, localPath) {
     if (component.$dryv) {
         return;
     }
 
     component.$dryv = { path, formValidators: [] };
-    formComponent.$watch(path, (newValue, oldValue) => {
+    formComponent.$watch(localPath, (newValue, oldValue) => {
         const d = formComponent.$dryv;
         if (d._lastDisabledFields === undefined) {
             return;
@@ -205,11 +205,13 @@ export default function (o) {
                 throw `The property path is missing. Please specify a value for the ${dryvFieldDirective} attribute or use the ${dryvFieldDirective} directive in combination with 'v-model'. Example value: 'firstName' or 'child.firstName'.`;
             }
 
+            const originalPath = directiveOptions.path;
+
             if ($dryv.path) {
                 directiveOptions.path = directiveOptions.path.substr($dryv.path.length + 1);
             }
 
-            initializeFieldComponent(formComponent, component, directiveOptions.path);
+            initializeFieldComponent(formComponent, component, directiveOptions.path, originalPath);
 
             const validators = $dryv.v.validators[directiveOptions.path];
             if (!validators) {
