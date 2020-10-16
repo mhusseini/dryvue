@@ -172,15 +172,29 @@ export default function (o) {
                 }, options);
 
                 const directive = formComponent._vnode.data.directives.filter(d => d.name === config.dryvSetDirective)[0].value;
+				
+				
+				let name = null;
+				let path = null;
 
-                if (typeof directive === "object") {
-                    formComponent.$dryv.path = directive.path;
-                }
-                else if (typeof directive === "string") {
-                    formComponent.$dryv.path = directive;
-                }
+				switch (typeof directive) {
+					case "object":
+						name = directive.name;
+						path = directive.path;
+						break;
+					case "string":
+						name = directive;
+						break;
+				}
+						
+				if (!name) {
+					throw `Form name is missing. Please specify a value for the ${config.dryvSetDirective} attribute.`;
+				}
+					
+					
+				formComponent.$dryv.path = path;
 
-                copyRules(formComponent.$dryv, formComponent.$dryv.path, options);
+                copyRules(formComponent.$dryv, name, options);
             }
 
             const $dryv = formComponent.$dryv;
