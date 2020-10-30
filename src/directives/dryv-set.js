@@ -19,6 +19,9 @@ function hashCode(text) {
 
 async function validate(component, clientContext) {
     const $dryv = component.$dryv;
+    if(!$dryv.handleResult){
+        $dryv.handleResult = (context, model, p, ruleName, result) => result;
+    }
     const context = Object.assign({ dryv: $dryv }, clientContext);
     const formValidators = $dryv.formValidators;
 
