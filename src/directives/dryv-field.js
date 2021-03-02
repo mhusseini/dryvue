@@ -149,6 +149,7 @@ function readConfigurationFromBinding(binding, options, $dryv) {
     }
 
     return {
+        originalPath: path,
         path,
         errorField,
         warningField,
@@ -161,6 +162,24 @@ function copyRules($dryv, name, options) {
 
     $dryv.v = validationSet;
     $dryv.params = validationSet.parameters;
+}
+
+function getDirectiveOptions(binding, options, vnode, $dryv) {
+    const directiveOptions = readConfigurationFromBinding(binding, options, $dryv);
+
+    if (!directiveOptions.path) {
+        directiveOptions.originalPath = directiveOptions.path = findModelExpression(vnode);
+    }
+
+    if (!directiveOptions.path) {
+        throw `The property path is missing. Please specify a value for the ${dryvFieldDirective} attribute or use the ${dryvFieldDirective} directive in combination with 'v-model'. Example value: 'firstName' or 'child.firstName'.`;
+    }
+
+    if ($dryv.path) {
+        directiveOptions.path = directiveOptions.path.substr($dryv.path.length + 1);
+    }
+
+    return directiveOptions;
 }
 
 export default function (o) {
@@ -223,23 +242,9 @@ export default function (o) {
                 }
             }
 
-            const directiveOptions = readConfigurationFromBinding(binding, options, $dryv);
+            const directiveOptions = getDirectiveOptions(binding, options, vnode, $dryv);
 
-            if (!directiveOptions.path) {
-                directiveOptions.path = findModelExpression(vnode);
-            }
-
-            if (!directiveOptions.path) {
-                throw `The property path is missing. Please specify a value for the ${dryvFieldDirective} attribute or use the ${dryvFieldDirective} directive in combination with 'v-model'. Example value: 'firstName' or 'child.firstName'.`;
-            }
-
-            const originalPath = directiveOptions.path;
-
-            if ($dryv.path) {
-                directiveOptions.path = directiveOptions.path.substr($dryv.path.length + 1);
-            }
-
-            initializeFieldComponent(formComponent, component, directiveOptions.path, originalPath);
+            initializeFieldComponent(formComponent, component, directiveOptions.path, directiveOptions.originalPath);
 
             const validators = $dryv.v.validators[directiveOptions.path];
             if (!validators) {
@@ -319,6 +324,24 @@ export default function (o) {
             component.$dryv.formValidators.push(fieldValidator);
             $dryv.namedValidators[directiveOptions.path] = fieldValidator;
             $dryv.formValidators.push(fieldValidator);
+        },
+        unbind: function(el, binding, vnode) {
+            const component = vnode.componentInstance || vnode.context;
+            const components = findFormComponent(vnode);
+            const formComponent = components.formComponent;
+            const $dryv = formComponent.$dryv;
+            const directiveOptions = getDirectiveOptions(binding, options, vnode, $dryv);
+
+            const removeValidatorFromArray = function(array, path) {
+                const indexOfRule = array.findIndex(v => v.path == path);
+                if(indexOfRule > -1) {
+                    array.splice(indexOfRule, 1);
+                }
+            }
+
+            removeValidatorFromArray($dryv.formValidators, directiveOptions.path);
+            removeValidatorFromArray(component.$dryv.formValidators, directiveOptions.path);
+            delete $dryv.namedValidators[directiveOptions.path];
         }
     }
 }
