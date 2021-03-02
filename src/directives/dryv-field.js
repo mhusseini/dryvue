@@ -132,20 +132,17 @@ function readConfigurationFromBinding(binding, options, $dryv) {
     let warningField = options.warningField;
     let hasErrorField = options.hasErrorField;
 
-    if (binding.value) {
-        switch (typeof binding.value) {
-            case "object":
-                errorField = binding.value.errorField || errorField;
-                warningField = binding.value.warningField || warningField;
-                hasErrorField = binding.value.hasErrorField || hasErrorField;
-                path = binding.value.path;
-                break;
-            case "string":
-                path = binding.value;
-                break;
+    switch(typeof binding.value){
+        case "object": {
+            errorField = binding.value.errorField || errorField;
+            warningField = binding.value.warningField || warningField;
+            hasErrorField = binding.value.hasErrorField || hasErrorField;
+            path = binding.value.path;
+            break;
         }
-    } else if (binding.expression) {
+     default:
         path = binding.expression;
+        break;
     }
 
     return {
@@ -172,7 +169,7 @@ function getDirectiveOptions(binding, options, vnode, $dryv) {
     }
 
     if (!directiveOptions.path) {
-        throw `The property path is missing. Please specify a value for the ${dryvFieldDirective} attribute or use the ${dryvFieldDirective} directive in combination with 'v-model'. Example value: 'firstName' or 'child.firstName'.`;
+        throw `The property path is missing. Please specify a value for the ${config.dryvFieldDirective} attribute or use the ${config.dryvFieldDirective} directive in combination with 'v-model'. Example value: 'firstName' or 'child.firstName'.`;
     }
 
     if ($dryv.path) {
@@ -188,7 +185,7 @@ export default function (o) {
         inserted: function (el, binding, vnode) {
             const component = vnode.componentInstance || vnode.context;
             if (!component) {
-                throw `The '${dryvFieldDirective}' directive can only be applied to components.`;
+                throw `The '${config.dryvFieldDirective}' directive can only be applied to components.`;
             }
             const components = findFormComponent(vnode);
             const formComponent = components.formComponent;
