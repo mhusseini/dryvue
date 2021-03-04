@@ -132,7 +132,7 @@ function readConfigurationFromBinding(binding, options, $dryv) {
     let warningField = options.warningField;
     let hasErrorField = options.hasErrorField;
 
-    switch(typeof binding.value){
+    switch(binding.value != null && typeof binding.value){
         case "object": {
             errorField = binding.value.errorField || errorField;
             warningField = binding.value.warningField || warningField;
