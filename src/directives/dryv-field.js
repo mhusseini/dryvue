@@ -179,6 +179,24 @@ function getDirectiveOptions(binding, options, vnode, $dryv) {
     return directiveOptions;
 }
 
+function validateGroup(validate, group, model, context) {
+    if (!group) {
+        return validate(model, context);
+    }
+
+    const result = validate(model, context);
+
+    if (typeof result == "string") {
+        return {
+            type: "error",
+            group,
+            text: result
+        };
+    }
+
+    return result;
+}
+
 export default function (o) {
     const options = config.createOptions(o);
     return {
@@ -299,7 +317,7 @@ export default function (o) {
                         let result = null;
                         const isEnabled = !disabledFields || disabledFields.filter(f => directiveOptions.path.indexOf(f) >= 0).length === 0;
                         if (isEnabled) {
-                            const validationFunctions = validators.map(v => v.validate);
+                            const validationFunctions = validators.map(v => validateGroup.bind(v, v.validate, v.group));
                             result = await runValidation(validationFunctions, data, context2);
                             if (validateRelated) {
                                 const related = [].concat.apply([], validators.filter(v => !!v.related).map(v => v.related));
