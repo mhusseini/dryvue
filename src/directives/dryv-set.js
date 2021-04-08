@@ -68,7 +68,7 @@ async function validate(component, clientContext) {
 
         switch (typeof result) {
             case "object":
-                switch (result.type) {
+                switch (result.type.toLowerCase()) {
                     case "error":
                         errors += `${v.path}=${result.text};`;
                         break;

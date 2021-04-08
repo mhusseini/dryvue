@@ -10,7 +10,7 @@ function handleValidationResult(component, result, directiveOptions, groupCompon
     if (result) {
         switch (typeof result) {
             case "object":
-                type = result.type;
+                type = result.type.toLowerCase();
                 group = result.group;
                 text = result.text;
                 break;
