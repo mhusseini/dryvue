@@ -11,7 +11,8 @@ const defaultOptions = {
     valueOfDate: valueOfDate,
     errorField: "error",
     warningField: "warning",
-    hasErrorField: "hasError"
+    hasErrorField: "hasError",
+    validationDebounceTime: 0
 };
 
 if(typeof fetch !== 'undefined')

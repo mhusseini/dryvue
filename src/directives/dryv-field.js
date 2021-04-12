@@ -64,7 +64,7 @@ function runValidation(v, m, context) {
     }, Promise.resolve());
 }
 
-function initializeFieldComponent(formComponent, component, path, localPath) {
+function initializeFieldComponent(formComponent, component, path, localPath, validationDebounceTime) {
     if (component.$dryv) {
         return;
     }
@@ -73,15 +73,22 @@ function initializeFieldComponent(formComponent, component, path, localPath) {
         path,
         formValidators: []
     };
-    formComponent.$watch(localPath, (newValue, oldValue) => {
-        const d = formComponent.$dryv;
-        if (d._lastDisabledFields === undefined) {
-            return;
-        }
 
-        component.$dryv.formValidators
-            .filter(v => !v.isValidating && v.path === path)
-            .forEach(v => v.validate(d._lastDisabledFields, d._lastContext, true));
+    var debouncerTimeout = null;
+    formComponent.$watch(localPath, (newValue, oldValue) => {
+        if (debouncerTimeout) {
+            clearTimeout(debouncerTimeout);
+        }
+        debouncerTimeout = setTimeout(function() {
+            const d = formComponent.$dryv;
+            if (d._lastDisabledFields === undefined) {
+                return;
+            }
+
+            component.$dryv.formValidators
+                .filter(v => !v.isValidating && v.path === path)
+                .forEach(v => v.validate(d._lastDisabledFields, d._lastContext, true));
+        }, validationDebounceTime);
     });
 }
 
@@ -131,6 +138,7 @@ function readConfigurationFromBinding(binding, options, $dryv) {
     let errorField = options.errorField;
     let warningField = options.warningField;
     let hasErrorField = options.hasErrorField;
+    let validationDebounceTime = options.validationDebounceTime;
 
     switch(binding.value != null && typeof binding.value){
         case "object": {
@@ -138,6 +146,7 @@ function readConfigurationFromBinding(binding, options, $dryv) {
             warningField = binding.value.warningField || warningField;
             hasErrorField = binding.value.hasErrorField || hasErrorField;
             path = binding.value.path;
+            validationDebounceTime = binding.value.validationDebounceTime || validationDebounceTime;
             break;
         }
      default:
@@ -150,7 +159,8 @@ function readConfigurationFromBinding(binding, options, $dryv) {
         path,
         errorField,
         warningField,
-        hasErrorField
+        hasErrorField,
+        validationDebounceTime
     };
 }
 
@@ -259,7 +269,7 @@ export default function (o) {
 
             const directiveOptions = getDirectiveOptions(binding, options, vnode, $dryv);
 
-            initializeFieldComponent(formComponent, component, directiveOptions.path, directiveOptions.originalPath);
+            initializeFieldComponent(formComponent, component, directiveOptions.path, directiveOptions.originalPath, directiveOptions.validationDebounceTime);
 
             const validators = $dryv.v.validators[directiveOptions.path];
             if (!validators) {
