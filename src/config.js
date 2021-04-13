@@ -12,7 +12,7 @@ const defaultOptions = {
     errorField: "error",
     warningField: "warning",
     hasErrorField: "hasError",
-    validationDebounceTime: 0
+    debounce: 0
 };
 
 if(typeof fetch !== 'undefined')

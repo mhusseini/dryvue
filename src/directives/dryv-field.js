@@ -64,7 +64,7 @@ function runValidation(v, m, context) {
     }, Promise.resolve());
 }
 
-function initializeFieldComponent(formComponent, component, path, localPath, validationDebounceTime) {
+function initializeFieldComponent(formComponent, component, path, localPath, debounce) {
     if (component.$dryv) {
         return;
     }
@@ -79,7 +79,7 @@ function initializeFieldComponent(formComponent, component, path, localPath, val
         if (debouncerTimeout) {
             clearTimeout(debouncerTimeout);
         }
-        debouncerTimeout = setTimeout(function() {
+        debouncerTimeout = setTimeout(function () {
             const d = formComponent.$dryv;
             if (d._lastDisabledFields === undefined) {
                 return;
@@ -88,7 +88,7 @@ function initializeFieldComponent(formComponent, component, path, localPath, val
             component.$dryv.formValidators
                 .filter(v => !v.isValidating && v.path === path)
                 .forEach(v => v.validate(d._lastDisabledFields, d._lastContext, true));
-        }, validationDebounceTime);
+        }, debounce);
     });
 }
 
@@ -96,12 +96,14 @@ function findFormComponent(vnode) {
     let component = vnode.context;
     let formComponent = null;
     let groupComponent = null;
+    let fields = [];
 
     while (component) {
+        const directives = component._vnode.data && component._vnode.data.directives;
         if (!formComponent &&
             component._vnode && component._vnode.data &&
-            component._vnode.data.directives &&
-            component._vnode.data.directives.filter(d => d.name === config.dryvSetDirective).length > 0) {
+            directives &&
+            directives.filter(d => d.name === config.dryvSetDirective).length > 0) {
             formComponent = component;
         } else if (!groupComponent && component.$vnode && component.$vnode.componentOptions.tag === config.dryvGroupTag) {
             groupComponent = component;
@@ -114,9 +116,22 @@ function findFormComponent(vnode) {
         component = component.$parent;
     }
 
+    let node = vnode;
+    
+    while (node) {
+        const directives = node.data && node.data.directives;
+        if (directives) {
+            fields = fields.concat(directives
+                .filter(d => d.name === config.dryvFieldDirective));
+        }
+
+        node = node.parent;
+    }
+
     return {
         groupComponent,
-        formComponent
+        formComponent,
+        directives: fields || []
     };
 }
 
@@ -133,34 +148,25 @@ function findModelExpression(vnode) {
     return null;
 }
 
-function readConfigurationFromBinding(binding, options, $dryv) {
-    let path = null;
-    let errorField = options.errorField;
-    let warningField = options.warningField;
-    let hasErrorField = options.hasErrorField;
-    let validationDebounceTime = options.validationDebounceTime;
-
-    switch(binding.value != null && typeof binding.value){
-        case "object": {
-            errorField = binding.value.errorField || errorField;
-            warningField = binding.value.warningField || warningField;
-            hasErrorField = binding.value.hasErrorField || hasErrorField;
-            path = binding.value.path;
-            validationDebounceTime = binding.value.validationDebounceTime || validationDebounceTime;
-            break;
+function readConfigurationFromBinding(directives, options, $dryv) {
+    const directive = Object.assign({}, ...directives.map(binding => {
+        switch (binding.value != null && typeof binding.value) {
+            case "object":
+                return binding.value;
+            default:
+                return {
+                    path: binding.expression
+                };
         }
-     default:
-        path = binding.expression;
-        break;
-    }
+    }));
 
     return {
-        originalPath: path,
-        path,
-        errorField,
-        warningField,
-        hasErrorField,
-        validationDebounceTime
+        originalPath: directive.path,
+        path: directive.path,
+        errorField: directive.errorField || options.errorField,
+        warningField: directive.warningField || options.warningField,
+        hasErrorField: directive.hasErrorField || options.hasErrorField,
+        debounce: directive.debounce || options.debounce
     };
 }
 
@@ -171,8 +177,8 @@ function copyRules($dryv, name, options) {
     $dryv.params = validationSet.parameters;
 }
 
-function getDirectiveOptions(binding, options, vnode, $dryv) {
-    const directiveOptions = readConfigurationFromBinding(binding, options, $dryv);
+function getDirectiveOptions(directives, options, vnode, $dryv) {
+    const directiveOptions = readConfigurationFromBinding(directives, options, $dryv);
 
     if (!directiveOptions.path) {
         directiveOptions.originalPath = directiveOptions.path = findModelExpression(vnode);
@@ -215,8 +221,12 @@ export default function (o) {
             if (!component) {
                 throw `The '${config.dryvFieldDirective}' directive can only be applied to components.`;
             }
-            const components = findFormComponent(vnode);
-            const formComponent = components.formComponent;
+            const hierarchy = findFormComponent(vnode);
+            if(hierarchy.directives.length > 1){
+                return;
+            }
+
+            const formComponent = hierarchy.formComponent;
 
             if (!formComponent) {
                 Vue.util.warn(`No component found with a ${config.dryvSetDirective} directive.`);
@@ -230,7 +240,6 @@ export default function (o) {
                 }, options);
 
                 const directive = formComponent._vnode.data.directives.filter(d => d.name === config.dryvSetDirective)[0].value;
-
 
                 let name = null;
                 let path = null;
@@ -257,7 +266,7 @@ export default function (o) {
 
             const $dryv = formComponent.$dryv;
 
-            const groupComponent = components.groupComponent;
+            const groupComponent = hierarchy.groupComponent;
             if (groupComponent) {
                 if (!$dryv.groupComponents) {
                     $dryv.groupComponents = [];
@@ -267,9 +276,9 @@ export default function (o) {
                 }
             }
 
-            const directiveOptions = getDirectiveOptions(binding, options, vnode, $dryv);
+            const directiveOptions = getDirectiveOptions(hierarchy.directives, options, vnode, $dryv);
 
-            initializeFieldComponent(formComponent, component, directiveOptions.path, directiveOptions.originalPath, directiveOptions.validationDebounceTime);
+            initializeFieldComponent(formComponent, component, directiveOptions.path, directiveOptions.originalPath, directiveOptions.debounce);
 
             const validators = $dryv.v.validators[directiveOptions.path];
             if (!validators) {
@@ -350,16 +359,17 @@ export default function (o) {
             $dryv.namedValidators[directiveOptions.path] = fieldValidator;
             $dryv.formValidators.push(fieldValidator);
         },
-        unbind: function(el, binding, vnode) {
+        unbind: function (el, binding, vnode) {
             const component = vnode.componentInstance || vnode.context;
-            const components = findFormComponent(vnode);
+            const hierarchy = findFormComponent(vnode);
             const formComponent = components.formComponent;
             const $dryv = formComponent.$dryv;
-            const directiveOptions = getDirectiveOptions(binding, options, vnode, $dryv);
+            
+            const directiveOptions = getDirectiveOptions(hierarchy.directives, options, vnode, $dryv);
 
-            const removeValidatorFromArray = function(array, path) {
+            const removeValidatorFromArray = function (array, path) {
                 const indexOfRule = array.findIndex(v => v.path == path);
-                if(indexOfRule > -1) {
+                if (indexOfRule > -1) {
                     array.splice(indexOfRule, 1);
                 }
             }
