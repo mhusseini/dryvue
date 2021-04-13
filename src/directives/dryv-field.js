@@ -362,7 +362,7 @@ export default function (o) {
         unbind: function (el, binding, vnode) {
             const component = vnode.componentInstance || vnode.context;
             const hierarchy = findFormComponent(vnode);
-            const formComponent = components.formComponent;
+            const formComponent = hierarchy.formComponent;
             const $dryv = formComponent.$dryv;
             
             const directiveOptions = getDirectiveOptions(hierarchy.directives, options, vnode, $dryv);
