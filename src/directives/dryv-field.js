@@ -76,19 +76,20 @@ function initializeFieldComponent(formComponent, component, path, localPath, deb
 
     var debouncerTimeout = null;
     formComponent.$watch(localPath, (newValue, oldValue) => {
+        const d = formComponent.$dryv;
+        if (d._lastDisabledFields === undefined) {
+            return;
+        }
+
+        const validators = component.$dryv.formValidators.filter(v => !v.isValidating && v.path === path);
+        if (!validators.length) {
+            return;
+        }
+
         if (debouncerTimeout) {
             clearTimeout(debouncerTimeout);
         }
-        debouncerTimeout = setTimeout(function () {
-            const d = formComponent.$dryv;
-            if (d._lastDisabledFields === undefined) {
-                return;
-            }
-
-            component.$dryv.formValidators
-                .filter(v => !v.isValidating && v.path === path)
-                .forEach(v => v.validate(d._lastDisabledFields, d._lastContext, true));
-        }, debounce);
+        debouncerTimeout = setTimeout(()=> validators.forEach(v => v.validate(d._lastDisabledFields, d._lastContext, true)), debounce);
     });
 }
 
@@ -117,7 +118,7 @@ function findFormComponent(vnode) {
     }
 
     let node = vnode;
-    
+
     while (node) {
         const directives = node.data && node.data.directives;
         if (directives) {
@@ -222,7 +223,7 @@ export default function (o) {
                 throw `The '${config.dryvFieldDirective}' directive can only be applied to components.`;
             }
             const hierarchy = findFormComponent(vnode);
-            if(hierarchy.directives.length > 1){
+            if (hierarchy.directives.length > 1) {
                 return;
             }
 
@@ -362,9 +363,9 @@ export default function (o) {
         unbind: function (el, binding, vnode) {
             const component = vnode.componentInstance || vnode.context;
             const hierarchy = findFormComponent(vnode);
-            const formComponent = components.formComponent;
+            const formComponent = hierarchy.formComponent;
             const $dryv = formComponent.$dryv;
-            
+
             const directiveOptions = getDirectiveOptions(hierarchy.directives, options, vnode, $dryv);
 
             const removeValidatorFromArray = function (array, path) {
