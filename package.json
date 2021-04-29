@@ -1,10 +1,10 @@
 {
   "name": "@softwareproduction/dryvue",
-  "version": "1.0.0-pre.15",
+  "version": "1.0.0-pre.16",
   "description": "Dryv client-side components for Vue.js.",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "babel src -d build",
+    "build": "webpack --mode production",
     "watch": "babel-watch src/index.js"
   },
   "repository": {
@@ -22,8 +22,14 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.10.5",
-    "@babel/core": "^7.11.0",
-    "@babel/preset-env": "^7.11.0",
-    "babel-watch": "^7.0.0"
+    "@babel/core": "^7.13.16",
+    "@babel/preset-env": "^7.13.15",
+    "@babel/preset-react": "^7.13.13",
+    "babel-loader": "^8.2.2",
+    "babel-watch": "^7.0.0",
+    "html-webpack-plugin": "^5.3.1",
+    "webpack": "^5.36.1",
+    "webpack-cli": "^4.6.0",
+    "webpack-dev-server": "^3.11.2"
   }
 }
