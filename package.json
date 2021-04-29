@@ -1,6 +1,6 @@
 {
   "name": "@softwareproduction/dryvue",
-  "version": "1.0.0-pre.16",
+  "version": "1.0.0-pre.17",
   "description": "Dryv client-side components for Vue.js.",
   "main": "dist/index.js",
   "scripts": {
