@@ -56,9 +56,14 @@ function handleValidationResult(component, result, directiveOptions, groupCompon
     };
 }
 
-function runValidation(v, m, context) {
+let validationCounter = 0;
+
+function runValidation(v, m, context, counter) {
     return v.reduce(function (promiseChain, currentTask) {
         return promiseChain.then(function (r) {
+            if (counter != validationCounter) {
+                return null;
+            }
             return r || currentTask(m, context);
         });
     }, Promise.resolve());
@@ -337,8 +342,9 @@ export default function (o) {
                         let result = null;
                         const isEnabled = !disabledFields || disabledFields.filter(f => directiveOptions.path.indexOf(f) >= 0).length === 0;
                         if (isEnabled) {
+                            validationCounter = validationCounter + 1;
                             const validationFunctions = validators.map(v => validateGroup.bind(v, v.validate, v.group));
-                            result = await runValidation(validationFunctions, data, context2);
+                            result = await runValidation(validationFunctions, data, context2, validationCounter);
                             if (validateRelated) {
                                 const related = [].concat.apply([], validators.filter(v => !!v.related).map(v => v.related));
                                 related.forEach(path => $dryv.namedValidators[path].validate(disabledFields, context));
