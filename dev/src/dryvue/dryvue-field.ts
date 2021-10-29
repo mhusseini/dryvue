@@ -1,14 +1,11 @@
 import Vue, { VNode } from "vue";
-import { DryvFormValidationResult } from "../dryv";
 import { DryvueFormVue } from "../dryvue";
-import { DryvValidationResult } from "../dryv";
+import { DryvValidationResult } from "@/dryv";
 import DryvField from "@/dryv/DryvField";
 
 export default Vue.extend({
   data() {
     return {
-      hasError: false,
-      hasWarning: false,
       error: null as string | null | undefined,
       warning: null as string | null | undefined,
       isDirty: false,
@@ -20,11 +17,8 @@ export default Vue.extend({
   },
   computed: {
     success(): boolean {
-      return !this.hasError && !this.hasWarning;
+      return !this.error && !this.warning;
     },
-  },
-  created() {
-    (this as any).$dryvField = {};
   },
   mounted() {
     let parent = this.$parent as DryvueFormVue;
@@ -77,12 +71,13 @@ export default Vue.extend({
     dryvForm.registerField(dryvField);
   },
   methods: {
-    async validate(): Promise<DryvValidationResult | null> {
-      return !this.$dryvField ? null : await this.$dryvField.revalidate();
+    async validate(): Promise<DryvValidationResult | undefined> {
+      return !this.$dryvField ? undefined : await this.$dryvField.revalidate();
     },
-    $onValidated(result: DryvValidationResult | null) {
+    $onValidated(result: DryvValidationResult | undefined) {
       this.error = null;
       this.warning = null;
+      this.isValidated = true;
 
       if (!result) {
         return;

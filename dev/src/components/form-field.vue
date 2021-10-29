@@ -3,7 +3,7 @@
     <input :value="value" @change="changed" ref="input" />
     <span v-if="error">{{ error }} </span>
     <span v-if="warning">{{ warning }} </span>
-    <span v-if="success">&#x2713;</span>
+    <span v-if="success && isValidated">&#x2713;</span>
   </div>
 </template>
 <script lang="ts">

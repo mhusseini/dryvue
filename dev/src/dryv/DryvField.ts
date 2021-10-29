@@ -1,90 +1,145 @@
-import { DryvValidationContext, DryvValidationResult } from ".";
+import {DryvFormValidationContext, DryvRule, DryvValidationResult} from ".";
 import DryvForm from "./DryvForm";
-export interface DryvRuleInfo {
-  validate: (
-    m: any,
-    ctx: DryvValidationContext
-  ) => DryvValidationResult | string | null;
-}
-// export interface DryvRule {
-//   (m: any, ctx: DryvValidationContext): DryvValidationResult | string | null;
-// }
-
-export type DryvRule = (
-  m: any,
-  ctx: DryvValidationContext
-) => Promise<DryvValidationResult | string | null>;
+import DryvGroup from "@/dryv/DryvGroup";
 
 export default class DryvField {
-  path = "";
-  validated?: (validationResult: DryvValidationResult | null) => void;
-  validationResult?: DryvValidationResult | null;
-  private recentRules?: DryvRule[];
-  private recentModel?: any;
-  private recentContext?: DryvValidationContext;
-  constructor(public form: DryvForm) {
-    // nop
-  }
-  
-  async validate(
-    rules: Array<DryvRule>,
-    model: any,
-    context: DryvValidationContext
-  ): Promise<DryvValidationResult | null> {
-    this.recentRules = rules;
-    this.recentModel = model;
-    this.recentContext = context;
+    isDisabled = false;
+    validated?: (validationResult: DryvValidationResult | undefined) => void;
+    validationResult?: DryvValidationResult | undefined;
+    rules: DryvRule[] = [];
+    private model?: unknown;
+    validationContext?: DryvFormValidationContext;
+    groups: Array<DryvGroup> = [];
+    $relatedFields?: Array<DryvField>;
 
-    this.validationResult = await this.validateInternal(rules, model, context);
-
-    if (this.validated) {
-      this.validated(this.validationResult);
+    constructor(public form: DryvForm, public path: string = "") {
+        // nop
     }
 
-    this.form.fieldValidated(this);
+    async validate(
+        model: unknown,
+        context: DryvFormValidationContext,
+        stack?: Array<string>
+    ): Promise<DryvValidationResult | undefined> {
+        if (context.fieldValidationPromises[this.path]) {
+            return await context.fieldValidationPromises[this.path] as Promise<DryvValidationResult | undefined>;
+        }
 
-    return this.validationResult;
-  }
+        this.model = model;
+        this.validationContext = context;
+        context.validatedFields[this.path] = true;
 
-  revalidate(): Promise<DryvValidationResult | null> {
-    return !this.recentRules || !this.recentModel || !this.recentContext
-      ? Promise.resolve(null)
-      : this.validate(this.recentRules, this.recentModel, this.recentContext);
-  }
+        const promise = this.validateUntilFirstError(model, context, stack ?? []);
+        context.fieldValidationPromises[this.path] = promise;
+        this.validationResult = await promise;
+        
+        if (this.validated) {
+            this.validated(this.validationResult);
+        }
 
-  private async validateInternal(
-    rules: Array<DryvRule>,
-    model: any,
-    context: DryvValidationContext
-  ): Promise<DryvValidationResult | null> {
-    for (const rule of rules) {
-      const result = await rule(model, context);
-      const obj: DryvValidationResult = result as any;
+        this.form.fieldValidated(this);
 
-      switch (typeof result) {
-        case "string":
-          if (!result) {
-            break;
-          }
-          return {
-            type: "error",
-            text: result,
-          };
-        case "object":
-          if (!obj?.text) {
-            break;
-          }
-
-          if (obj.type) {
-            obj.type = obj.type.toLowerCase() as any;
-          } else {
-            obj.type = "error";
-          }
-
-          return obj;
-      }
+        return this.validationResult;
     }
 
-    return null;
-  }
+    async revalidate(): Promise<DryvValidationResult | undefined> {
+        if (!this.rules.length || !this.model) {
+            return undefined;
+        }
+
+        const validationContext = await this.form.$beginValidation();
+
+        try {
+            return await this.validate(
+                this.model,
+                validationContext,
+                [this.path]
+            );
+        } finally {
+            this.form.$endValidation();
+        }
+    }
+
+    private async validateUntilFirstError(model: unknown,
+                                          context: DryvFormValidationContext,
+                                          stack: Array<string>
+    ): Promise<DryvValidationResult | undefined> {
+        if (this.isDisabled || !this.rules) {
+            return undefined;
+        }
+
+        const nextStack = stack.concat([this.path]);
+
+        for (const rule of this.rules) {
+            if (rule.related) {
+                const promises = rule.related
+                    .filter(path => stack.indexOf(path) < 0);
+                await Promise.all(promises
+                    .map(path => this.form.fields[path]?.validate(model, context, nextStack)))
+            }
+
+            // If any related field has an error unrelated to the current group, skip this rule.
+            if (rule.group && this.form.groups[rule.group]
+                ?.fields
+                ?.map(field => field.validationResult)
+                .filter(result => result?.type === "error" && result.group !== rule.group)
+                .length) {
+                continue;
+            }
+
+            const promiseF = () => DryvField.validateRule(rule, model, context);
+            const promise =
+                rule.group
+                    ? context.groupValidations[rule.group] ?? (context.groupValidations[rule.group] = promiseF())
+                    : promiseF();
+
+            const result = await promise;
+            if (result) {
+                return result;
+            }
+        }
+
+        return undefined;
+    }
+
+    private static async validateRule(rule: DryvRule,
+                                      model: unknown,
+                                      context: DryvFormValidationContext
+    ): Promise<DryvValidationResult | undefined> {
+        {
+            const result = await rule.validate(model, context);
+
+            switch (typeof result) {
+                case "string": {
+                    if (!result) {
+                        break;
+                    }
+
+                    return {
+                        type: "error",
+                        text: result,
+                        group: rule.group,
+                    };
+                }
+                case "object": {
+                    const obj: DryvValidationResult = result;
+                    if (!obj?.text) {
+                        break;
+                    }
+
+                    if (!obj.type) {
+                        obj.type = "error";
+                    }
+
+                    if (!obj.group) {
+                        obj.group = rule.group;
+                    }
+
+                    return obj;
+                }
+            }
+        }
+
+        return undefined;
+    }
 }

@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
-    "module-alias": "^2.2.2",
     "vue": "^2.6.11"
   },
   "devDependencies": {
@@ -24,6 +23,7 @@
     "@vue/cli-service": "~4.5.0",
     "@vue/eslint-config-typescript": "^7.0.0",
     "@vue/test-utils": "^1.0.3",
+    "module-alias": "^2.2.2",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "module": "^1.2.5",
