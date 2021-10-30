@@ -1,6 +1,6 @@
 <template>
   <div>
-    <input :value="value" @change="changed" ref="input" />
+    <input :value="value" @change="changed" ref="input" v-bind:class="{error}"/>
     <p v-if="error && showValidationResult">{{ error }} </p>
     <p v-if="warning && showValidationResult">{{ warning }} </p>
     <p v-if="success && isValidated">&#x2713;</p>
@@ -25,3 +25,9 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style>
+input.error {
+  border: 1px solid red;
+}
+</style>
