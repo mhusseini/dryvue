@@ -1,6 +1,7 @@
 import DryvField_ from "@/dryv/DryvGroup";
 import DryvGroup from "@/dryv/DryvGroup";
 import Dryv_ from "@/dryv/Dryv";
+import DryvField from "@/dryv/DryvField";
 
 export const Dryv = Dryv_;
 
@@ -18,7 +19,7 @@ export interface DryvFormValidationResult {
 export interface DryvValidationResult {
     type?: "error" | "warning";
     text?: string;
-    group?: string | DryvGroup;
+    group?: string;
 }
 
 export interface DryvValidationSet {
@@ -48,7 +49,8 @@ export type DryvValidationFunction = (
 export interface DryvFormValidationContext extends DryvValidationContext {
     fieldValidationPromises: { [path: string]: Promise<DryvValidationResult | undefined> | undefined };
     validatedFields: { [path: string]: boolean };
-    groupValidations: { [path: string]: Promise<DryvValidationResult | undefined> | undefined };
+    groupValidationPromises: { [path: string]: Promise<DryvValidationResult | undefined> | undefined };
+    groupValidatingField: { [path: string]: DryvField };
 }
 
 export interface DryvOptions {

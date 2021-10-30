@@ -32,7 +32,7 @@ export default class DryvField {
         const promise = this.validateUntilFirstError(model, context, stack ?? []);
         context.fieldValidationPromises[this.path] = promise;
         this.validationResult = await promise;
-        
+
         if (this.validated) {
             this.validated(this.validationResult);
         }
@@ -69,14 +69,17 @@ export default class DryvField {
         }
 
         const nextStack = stack.concat([this.path]);
-
         for (const rule of this.rules) {
-            if (rule.related) {
-                const promises = rule.related
-                    .filter(path => stack.indexOf(path) < 0);
-                await Promise.all(promises
-                    .map(path => this.form.fields[path]?.validate(model, context, nextStack)))
+            const groupValidatingField = rule.group && context.groupValidatingField[rule.group]?.path;
+            const promises = rule.related?.filter(path => path !== groupValidatingField && stack.indexOf(path) < 0);
+
+            if (rule.group) {
+                context.groupValidatingField[rule.group] = this;
             }
+
+            await Promise.all(promises
+                    ?.map(path => this.form.fields[path]?.validate(model, context, nextStack))
+                ?? [])
 
             // If any related field has an error unrelated to the current group, skip this rule.
             if (rule.group && this.form.groups[rule.group]
@@ -88,10 +91,9 @@ export default class DryvField {
             }
 
             const promiseF = () => DryvField.validateRule(rule, model, context);
-            const promise =
-                rule.group
-                    ? context.groupValidations[rule.group] ?? (context.groupValidations[rule.group] = promiseF())
-                    : promiseF();
+            const promise = rule.group
+                ? context.groupValidationPromises[rule.group] ?? (context.groupValidationPromises[rule.group] = promiseF())
+                : promiseF();
 
             const result = await promise;
             if (result) {
@@ -108,7 +110,6 @@ export default class DryvField {
     ): Promise<DryvValidationResult | undefined> {
         {
             const result = await rule.validate(model, context);
-
             switch (typeof result) {
                 case "string": {
                     if (!result) {

@@ -4,7 +4,6 @@ import {
     DryvValidationSet,
 } from "@/dryv";
 import DryvField from "@/dryv/DryvField";
-import DryvGroup from "@/dryv/DryvGroup";
 
 describe("DryvForm", () => {
     it("correctly finds related fields.", async () => {
@@ -96,17 +95,11 @@ describe("DryvForm", () => {
         const form = new DryvForm("lastName");
         const firstNameField = form.registerField(new DryvField(form, "firstName"));
 
-        form.registerGroup(new DryvGroup("g", form));
+        const result = await form.validate(validationSet, model);
 
-        const result = await form.validate(
-            validationSet,
-            model
-        );
-
-        debugger;
-        expect(result).not.toBeNull();
-        expect(firstNameField.validationResult).not.toBeNull();
-        expect(firstNameField.validationResult?.group).not.toBeNull();
-        expect(typeof firstNameField.validationResult?.group).not.toBe("string");
+        expect(result).not.toBeUndefined();
+        expect(firstNameField.validationResult).not.toBeUndefined();
+        expect(firstNameField.validationResult?.group).not.toBeUndefined();
+        expect(typeof firstNameField.validationResult?.group).not.toBeUndefined();
     });
 });

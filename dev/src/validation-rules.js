@@ -4,36 +4,37 @@
   }
   dryv.v["form1"] = {
     validators: {
-      firstName: [{
-          annotations: {
-            required: true
-          },
-          validate: function ($m, $ctx) {
-            return !/\S/.test($m.firstName || "") ?
-              {
-                type: "error",
-                text: "Bitte geben Sie Ihren Vornamen an.",
-                group: null,
-              } :
-              null;
-          },
-        },
-        {
-          validate: function ($m, $ctx) {
-            return /[^\u0020-\u00ff]/.test($m.firstName) ?
-              {
-                type: "error",
-                text: "Bitte nutzen Sie nur die Zeichen aus dem westeuropäischen Zeichensatz.",
-                group: null,
-              } :
-              null;
-          },
-        },
+      firstName: [
+        //   {
+        //   annotations: {
+        //     required: true
+        //   },
+        //   validate: function ($m, $ctx) {
+        //     return !/\S/.test($m.firstName || "") ?
+        //       {
+        //         type: "error",
+        //         text: "Bitte geben Sie Ihren Vornamen an.",
+        //         group: null,
+        //       } :
+        //       null;
+        //   },
+        // },
+        // {
+        //   validate: function ($m, $ctx) {
+        //     return /[^\u0020-\u00ff]/.test($m.firstName) ?
+        //       {
+        //         type: "error",
+        //         text: "Bitte nutzen Sie nur die Zeichen aus dem westeuropäischen Zeichensatz.",
+        //         group: null,
+        //       } :
+        //       null;
+        //   },
+        // },
         {
           group: "name-group",
           related: ["lastName"],
           validate: function ($m, $ctx) {
-            return $m.firstName != "A" || $m.lastName != "B" ?
+            return ($m.firstName !== "A") || ($m.lastName !== "B") ?
               {
                 type: "error",
                 text: "last and first name must be A and B.",
@@ -43,36 +44,37 @@
           },
         }
       ],
-      lastName: [{
-          annotations: {
-            required: true
-          },
-          validate: function ($m, $ctx) {
-            return !/\S/.test($m.lastName || "") ?
-              {
-                type: "error",
-                text: "Bitte geben Sie Ihren Nachnamen an.",
-                group: null,
-              } :
-              null;
-          },
-        },
-        {
-          validate: function ($m, $ctx) {
-            return /[^\u0020-\u00ff]/.test($m.lastName) ?
-              {
-                type: "error",
-                text: "Bitte nutzen Sie nur die Zeichen aus dem westeuropäischen Zeichensatz.",
-                group: null,
-              } :
-              null;
-          },
-        },
+      lastName: [
+        //   {
+        //   annotations: {
+        //     required: true
+        //   },
+        //   validate: function ($m, $ctx) {
+        //     return !/\S/.test($m.lastName || "") ?
+        //       {
+        //         type: "error",
+        //         text: "Bitte geben Sie Ihren Nachnamen an.",
+        //         group: null,
+        //       } :
+        //       null;
+        //   },
+        // },
+        // {
+        //   validate: function ($m, $ctx) {
+        //     return /[^\u0020-\u00ff]/.test($m.lastName) ?
+        //       {
+        //         type: "error",
+        //         text: "Bitte nutzen Sie nur die Zeichen aus dem westeuropäischen Zeichensatz.",
+        //         group: null,
+        //       } :
+        //       null;
+        //   },
+        // },
         {
           group: "name-group",
           related: ["firstName"],
           validate: function ($m, $ctx) {
-            return $m.firstName != "A" && $m.lastName != "B" ?
+            return ($m.firstName !== "A") || ($m.lastName !== "B") ?
               {
                 type: "error",
                 text: "last and first name must be A and B.",

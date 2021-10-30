@@ -49,13 +49,14 @@ export default class DryvForm {
             return this.validationContext;
         }
 
-        const validationContext = {
+        const validationContext: DryvFormValidationContext = {
             get: Dryv.config.get,
             post: Dryv.config.post,
             callServer: Dryv.config.callServer,
             fieldValidationPromises: {},
-            groupValidations: {},
+            groupValidationPromises: {},
             validatedFields: {},
+            groupValidatingField: {}
         };
 
         this.validationContext = validationContext;
@@ -279,15 +280,7 @@ export default class DryvForm {
      @param validationSet The Dryv validation set to get the mapping from.
      */
     private registerRulesWithFields(validationSet: DryvValidationSet) {
-        Object.values(this.fields).forEach(field => {
-            const rules = validationSet.validators[field.path];
-            // Sort rules ascending by related field count.
-            field.rules = rules
-                    ?.sort((a, b) => (a.related?.length ?? 0) < (b.related?.length ?? 0) ? 1 : -1)
-                ?? [];
-        });
-
-
+        Object.values(this.fields).forEach(field => field.rules = validationSet.validators[field.path] ?? []);
     }
 
     private static findValidationSet(validationSetInput: DryvValidationSet | string) {
