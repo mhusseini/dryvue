@@ -2,6 +2,7 @@ import DryvForm from "@/dryv/DryvForm";
 import {
     DryvValidationSet,
 } from "@/dryv";
+import DryvGroup from "@/dryv/DryvGroup";
 
 describe("DryvForm", () => {
     const validate = (m: any): any => Promise.resolve(m.field1 && m.field2 ? null : "This is an error");
@@ -105,22 +106,98 @@ describe("DryvForm", () => {
 
     it("revalidates valid fields with no error.", async () => {
         const model = {
-            field1: "",
+            field1: "X",
             field2: "",
         };
 
+        const validate1 = (m: any): any => Promise.resolve(m.field1 === m.field2 ? null : "error1");
+        const validate2 = (m: any): any => Promise.resolve(m.field2 ? null : "error2");
+
+        const validationSet: DryvValidationSet = {
+                validators: {
+                    field1: [{group: "g", validate: validate1, related: ["field2"]}],
+                    field2: [
+                        {validate: validate2},
+                        {group: "g", validate: validate1, related: ["field1"]}],
+                },
+            }
+        ;
         const form = new DryvForm("field1", "field2");
         await form.validate(validationSet, model);
 
-        expect(form.fields.field1.validationResult).not.toBeUndefined()
+        expect(form.fields.field1.validationResult).toBeUndefined()
         expect(form.fields.field2.validationResult).not.toBeUndefined();
 
-        model.field1 = "value1";
-        model.field2 = "value2";
+        model.field2 = "X";
 
-        await form.fields.field1.revalidate();
+        await form.fields.field2.revalidate();
 
         expect(form.fields.field1.validationResult).toBeUndefined()
         expect(form.fields.field2.validationResult).toBeUndefined();
+
+        model.field1 = "";
+
+        await form.fields.field2.revalidate();
+
+        expect(form.fields.field1.validationResult).not.toBeUndefined()
+        expect(form.fields.field2.validationResult).not.toBeUndefined();
+    });
+
+    it("calls events when (re)validated.", async () => {
+        const model = {
+            field1: "X",
+            field2: "",
+        };
+
+        const validate1 = (m: any): any => Promise.resolve(m.field1 === m.field2 ? null : "error1");
+        const validate2 = (m: any): any => Promise.resolve(m.field2 ? null : "error2");
+
+        const validationSet: DryvValidationSet = {
+            validators: {
+                field1: [{group: "g", validate: validate1, related: ["field2"]}],
+                field2: [
+                    {validate: validate2},
+                    {group: "g", validate: validate1, related: ["field1"]}],
+            },
+        };
+        let field1Error: string | undefined;
+        let field2Error: string | undefined;
+        let groupError: string | undefined;
+
+        const form = new DryvForm("field1", "field2");
+        form.fields.field1.validated = () => field1Error = form.fields.field1.validationResult?.text;
+        form.fields.field2.validated = () => field2Error = form.fields.field2.validationResult?.text;
+        form.registerGroup(new DryvGroup("g", form)).handle = () => {
+            groupError = form.groups.g.validationResult?.text;
+            return true;
+        };
+        
+        await form.validate(validationSet, model);
+
+        expect(form.fields.field1.showValidationResult).not.toBeFalsy();
+        expect(form.fields.field2.showValidationResult).not.toBeFalsy();
+        expect(field1Error).toBeUndefined();
+        expect(field2Error).not.toBeUndefined();
+        expect(groupError).toBeUndefined();
+        
+        model.field2 = "X";
+
+        await form.fields.field2.revalidate();
+
+        expect(form.fields.field1.showValidationResult).not.toBeFalsy();
+        expect(form.fields.field2.showValidationResult).not.toBeFalsy();
+        expect(field1Error).toBeUndefined();
+        expect(field2Error).toBeUndefined();
+        expect(groupError).toBeUndefined();
+
+        model.field1 = "";
+
+        await form.fields.field2.revalidate();
+
+        expect(form.fields.field1.showValidationResult).toBeFalsy();
+        expect(form.fields.field2.showValidationResult).toBeTruthy();
+        expect(field1Error).not.toBeUndefined();
+        expect(field2Error).not.toBeUndefined();
+        expect(groupError).not.toBeUndefined();
     });
 });

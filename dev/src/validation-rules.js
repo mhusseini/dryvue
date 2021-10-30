@@ -5,29 +5,29 @@
   dryv.v["form1"] = {
     validators: {
       firstName: [
-        //   {
+        // {
         //   annotations: {
         //     required: true
         //   },
         //   validate: function ($m, $ctx) {
         //     return !/\S/.test($m.firstName || "") ?
-        //       {
-        //         type: "error",
-        //         text: "Bitte geben Sie Ihren Vornamen an.",
-        //         group: null,
-        //       } :
-        //       null;
+        //         {
+        //           type: "error",
+        //           text: "Bitte geben Sie Ihren Vornamen an.",
+        //           group: null,
+        //         } :
+        //         null;
         //   },
         // },
         // {
         //   validate: function ($m, $ctx) {
         //     return /[^\u0020-\u00ff]/.test($m.firstName) ?
-        //       {
-        //         type: "error",
-        //         text: "Bitte nutzen Sie nur die Zeichen aus dem westeuropäischen Zeichensatz.",
-        //         group: null,
-        //       } :
-        //       null;
+        //         {
+        //           type: "error",
+        //           text: "Bitte nutzen Sie nur die Zeichen aus dem westeuropäischen Zeichensatz.",
+        //           group: null,
+        //         } :
+        //         null;
         //   },
         // },
         {
@@ -45,20 +45,20 @@
         }
       ],
       lastName: [
-        //   {
-        //   annotations: {
-        //     required: true
-        //   },
-        //   validate: function ($m, $ctx) {
-        //     return !/\S/.test($m.lastName || "") ?
-        //       {
-        //         type: "error",
-        //         text: "Bitte geben Sie Ihren Nachnamen an.",
-        //         group: null,
-        //       } :
-        //       null;
-        //   },
-        // },
+          {
+          annotations: {
+            required: true
+          },
+          validate: function ($m, $ctx) {
+            return !/\S/.test($m.lastName || "") ?
+              {
+                type: "error",
+                text: "Bitte geben Sie Ihren Nachnamen an.",
+                group: null,
+              } :
+              null;
+          },
+        },
         // {
         //   validate: function ($m, $ctx) {
         //     return /[^\u0020-\u00ff]/.test($m.lastName) ?

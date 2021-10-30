@@ -1,17 +1,17 @@
 <template>
   <div>
     <input :value="value" @change="changed" ref="input" />
-    <span v-if="error">{{ error }} </span>
-    <span v-if="warning">{{ warning }} </span>
-    <span v-if="success && isValidated">&#x2713;</span>
+    <p v-if="error && showValidationResult">{{ error }} </p>
+    <p v-if="warning && showValidationResult">{{ warning }} </p>
+    <p v-if="success && isValidated">&#x2713;</p>
   </div>
 </template>
 <script lang="ts">
 import Vue from "vue";
-import dryvueField from "../dryvue/dryvue-field";
+import DryvueField from "../dryvue/DryvueField";
 
 export default Vue.extend({
-  mixins: [dryvueField],
+  mixins: [DryvueField],
   props: ["value"],
   watch: {
     async value() {

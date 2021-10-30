@@ -3,40 +3,29 @@ import DryvField from "@/dryv/DryvField";
 import DryvForm from "@/dryv/DryvForm";
 
 export default class DryvGroup {
-    validated?: (validationResult?: DryvValidationResult) => void;
+    handle?: (validationResult?: DryvValidationResult) => boolean | undefined;
     validationResult?: DryvValidationResult;
     fields: Array<DryvField> = [];
     disableAutoValidate = false;
+    private lastHandled = false;
 
     constructor(public name: string, public form: DryvForm) {
     }
 
-    fieldValidated(field: DryvField): void {
-        const changed = this.validationResult != field?.validationResult;
-        this.validationResult = field?.validationResult;
+    fieldValidated(field?: DryvField): boolean {
+        const result = field?.validationResult?.group === this.name
+            ? field?.validationResult
+            : undefined;
 
+        const changed = this.validationResult != result;
         if (!changed) {
-            return;
+            return this.lastHandled;
         }
+        
+        this.validationResult = result;
 
-        if (this.validated) {
-            this.validated(this.validationResult);
-        }
+        this.lastHandled = (this.handle && this.handle(this.validationResult)) ?? false;
+        return this.lastHandled;
 
-        if (!this.disableAutoValidate) {
-            this.validateGroupFields(field).then(() => {/* nop */
-            });
-        }
-    }
-
-    private async validateGroupFields(field: DryvField): Promise<void> {
-        this.disableAutoValidate = true;
-        try {
-            await Promise.all(this.fields
-                .filter(f => f !== field)
-                .map((f) => f.revalidate()));
-        } finally {
-            this.disableAutoValidate = false;
-        }
     }
 }

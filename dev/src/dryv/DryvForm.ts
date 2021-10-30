@@ -16,7 +16,6 @@ import DryvGroup from "@/dryv/DryvGroup";
 // }
 
 export default class DryvForm {
-    private lastFieldStates: { [path: string]: string | null | undefined } = {};
     private disableRecalculation = false;
     private model: unknown;
     fields: { [path: string]: DryvField };
@@ -29,6 +28,7 @@ export default class DryvForm {
     private validationSet?: DryvValidationSet;
 
     //private entryFields: DryvField[] = [];
+    private lastHandled = false;
 
     constructor(...fields: Array<string>) {
         this.fields = {};
@@ -56,7 +56,8 @@ export default class DryvForm {
             fieldValidationPromises: {},
             groupValidationPromises: {},
             validatedFields: {},
-            groupValidatingField: {}
+            groupValidatingField: {},
+            groupResults: {}
         };
 
         this.validationContext = validationContext;
@@ -109,27 +110,25 @@ export default class DryvForm {
      */
     fieldValidated(field: DryvField): boolean {
         const state = field.validationResult?.type;
-        const lastState = this.lastFieldStates[field.path];
-        const hasChanegs = lastState !== state;
-
-        if (!hasChanegs) {
-            return true;
-        }
 
         let handled = false;
-
         const groupName = field.validationResult?.group;
-        if (typeof groupName === "string") {
+        if (groupName) {
             const group = this.groups[groupName];
             if (group) {
-                group.fieldValidated(field);
-                handled = true;
+                if (this.validationContext) {
+                    this.validationContext.groupResults[groupName] = field.validationResult as DryvValidationResult;
+                }
+                handled = group.fieldValidated(field)
             }
         }
 
-        this.lastFieldStates[field.path] = state;
+        // reset groups.
+        field.groups
+            .filter(group => group.validationResult && this.validationContext && !this.validationContext.groupResults[group.name])
+            .forEach(group => group.fieldValidated())
 
-        if (lastState) {
+        if (state) {
             const arr = state === "error" ? this.errors : this.warnings;
             const i = arr.indexOf(field);
             if (i <= 0) {
@@ -146,6 +145,7 @@ export default class DryvForm {
             this.validated(this.errors, this.warnings);
         }
 
+        this.lastHandled = handled;
         return handled;
     }
 
@@ -170,11 +170,11 @@ export default class DryvForm {
         Object.values(this.groups).forEach(g => g.disableAutoValidate = true);
         Object.values(this.fields).forEach(f => f.validationResult = undefined);
 
+        const fields = Object.values(this.fields);
         const validationContext = await this.$beginValidation();
 
         try {
-            const fieldResults = await Promise.all(Object
-                .values(this.fields)
+            const fieldResults = await Promise.all(fields
                 .map((field) => field
                     .validate(model, validationContext)));
 

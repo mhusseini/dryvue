@@ -1,5 +1,3 @@
-import DryvField_ from "@/dryv/DryvGroup";
-import DryvGroup from "@/dryv/DryvGroup";
 import Dryv_ from "@/dryv/Dryv";
 import DryvField from "@/dryv/DryvField";
 
@@ -47,6 +45,7 @@ export type DryvValidationFunction = (
 ) => Promise<DryvValidationResult | string | undefined>;
 
 export interface DryvFormValidationContext extends DryvValidationContext {
+    groupResults: { [groupName: string]: DryvValidationResult };
     fieldValidationPromises: { [path: string]: Promise<DryvValidationResult | undefined> | undefined };
     validatedFields: { [path: string]: boolean };
     groupValidationPromises: { [path: string]: Promise<DryvValidationResult | undefined> | undefined };

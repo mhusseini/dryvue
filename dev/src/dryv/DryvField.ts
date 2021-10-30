@@ -11,6 +11,7 @@ export default class DryvField {
     validationContext?: DryvFormValidationContext;
     groups: Array<DryvGroup> = [];
     $relatedFields?: Array<DryvField>;
+    showValidationResult = true;
 
     constructor(public form: DryvForm, public path: string = "") {
         // nop
@@ -33,11 +34,11 @@ export default class DryvField {
         context.fieldValidationPromises[this.path] = promise;
         this.validationResult = await promise;
 
+        this.showValidationResult = !this.form.fieldValidated(this);
+
         if (this.validated) {
             this.validated(this.validationResult);
         }
-
-        this.form.fieldValidated(this);
 
         return this.validationResult;
     }
@@ -84,7 +85,8 @@ export default class DryvField {
             // If any related field has an error unrelated to the current group, skip this rule.
             if (rule.group && this.form.groups[rule.group]
                 ?.fields
-                ?.map(field => field.validationResult)
+                ?.filter(field => field !== this)
+                .map(field => field.validationResult)
                 .filter(result => result?.type === "error" && result.group !== rule.group)
                 .length) {
                 continue;

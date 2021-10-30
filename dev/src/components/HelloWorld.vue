@@ -1,14 +1,16 @@
 <template>
   <div data-dryv-path-remove="model">
     <div>
-      <container>
-        <div class="c1">
-          <form-field v-model="model.firstName"></form-field>
+      <form-group name="name-group">
+        <container>
+          <div class="c1">
+            <form-field v-model="model.firstName"></form-field>
+          </div>
+        </container>
+        <div class="c2">
+          <form-field v-model="model.lastName"></form-field>
         </div>
-      </container>
-      <div class="c2">
-        <form-field v-model="model.lastName"></form-field>
-      </div>
+      </form-group>
       <button @click="send()">Send</button>
     </div>
   </div>
@@ -17,11 +19,12 @@
 <script lang="ts">
 import Vue from "vue";
 import FormField from "./form-field.vue";
-import DryvForm from "../dryvue/dryvue-form";
+import FormGroup from "./form-group";
+import DryvForm from "../dryvue/DryvueForm";
 import Container from "./container.vue";
 
 export default Vue.extend({
-  components: { FormField, Container },
+  components: {FormField, FormGroup, Container},
   mixins: [DryvForm],
   data() {
     return {
