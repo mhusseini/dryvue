@@ -111,7 +111,7 @@
               ) ?
               {
                 type: "error",
-                text: "Sie sind noch nicht volljährig? Dann können Sie hier im Internet leider keinen Vertrag mit Yello abschließen. Bitte rufen Sie uns zum Ortstarif an unter 0221 – 27 11 7777 - wir helfen Ihnen dann gerne weiter.",
+                text: "Sie müssen volljährig sein.",
                 group: null,
               } :
               null;

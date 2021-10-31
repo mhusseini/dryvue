@@ -6,10 +6,13 @@ export {DryvGroup} from "@/dryv/DryvGroup";
 export {DryvForm} from "@/dryv/DryvForm";
 
 export interface DryvValidationContext {
-    get: (url: string, data: any) => Promise<any>;
-    post: (url: string, data: any) => Promise<any>;
-    callServer: (url: string, method: "GET" | "POST", data: any) => Promise<any>;
-    handleResult: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    dryv: {
+        get: (url: string, data: any) => Promise<any>;
+        post: (url: string, data: any) => Promise<any>;
+        callServer: (url: string, method: "GET" | "POST", data: any) => Promise<any>;
+        handleResult: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+        valueOfDate: (value: string, locale: string, format: string) => unknown;
+    }
 }
 
 export interface DryvFormValidationResult {
@@ -59,14 +62,32 @@ export interface DryvFormValidationContext extends DryvValidationContext {
 }
 
 export interface DryvOptions {
-    get?: (url: string, data: any) => Promise<any>;
-    post?: (url: string, data: any) => Promise<any>;
+    get?: (url: string, data: unknown) => Promise<unknown>;
+    post?: (url: string, data: unknown) => Promise<unknown>;
+    handleResult?: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    valueOfDate?: (value: string, locale: string, format: string) => unknown;
+}
+
+export interface DryvFormOptions extends DryvOptions {
+    validationSet: DryvValidationSet | string;
+}
+
+export interface DryvFieldOptions extends DryvOptions {
+    validated?: (field: DryvField) => void;
+    debounce?: number;
+}
+
+export interface DryvGroupOptions extends DryvOptions {
+    handle?: (validationResult?: DryvValidationResult) => boolean | undefined;
+    validated?: (validationResult?: DryvValidationResult) => void;
 }
 
 export interface DryvConfiguration {
     get: (url: string, data: any) => Promise<any>;
     post: (url: string, data: any) => Promise<any>;
     callServer: (url: string, method: "GET" | "POST", data: any) => Promise<any>;
+    handleResult: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    valueOfDate: (value: string, locale: string, format: string) => unknown;
 }
 
 export interface DryvValidationSetProvider {

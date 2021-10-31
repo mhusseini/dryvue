@@ -1,9 +1,8 @@
-import DryvForm from "@/dryv/DryvForm";
 import {
+    DryvForm,
     DryvValidationResult,
     DryvValidationSet,
 } from "@/dryv";
-import DryvField from "@/dryv/DryvField";
 
 describe("DryvForm", () => {
     it(" returns an error when a rule applies.", async () => {
@@ -22,12 +21,8 @@ describe("DryvForm", () => {
             lastName: "",
         };
 
-        const form = new DryvForm("firstName", "lastName");
-
-        const result = await form.validate(
-            validationSet,
-            model
-        );
+        const form = new DryvForm({validationSet}, "firstName", "lastName");
+        const result = await form.validate(model);
 
         expect(result).not.toBeNull();
     });
@@ -63,10 +58,10 @@ describe("DryvForm", () => {
             lastName: "",
         };
 
-        const form = new DryvForm("lastName");
-        const firstNameField = form.registerField(new DryvField(form, "firstName"));
+        const form = new DryvForm({validationSet}, "lastName");
+        const firstNameField = form.registerField("firstName");
 
-        const result = await form.validate(validationSet, model);
+        const result = await form.validate(model);
 
         expect(result).not.toBeUndefined();
         expect(firstNameField.validationResult).not.toBeUndefined();

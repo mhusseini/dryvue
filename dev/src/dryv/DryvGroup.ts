@@ -1,15 +1,14 @@
-import {DryvValidationResult} from "@/dryv/index";
+import {DryvGroupOptions, DryvValidationResult} from "@/dryv/index";
 import {DryvField} from "@/dryv/DryvField";
 import {DryvForm} from "@/dryv/DryvForm";
 
 export class DryvGroup {
-    handle?: (validationResult?: DryvValidationResult) => boolean | undefined;
     validationResult?: DryvValidationResult;
     fields: Array<DryvField> = [];
     disableAutoValidate = false;
     private lastHandled = false;
 
-    constructor(public name: string, public form: DryvForm) {
+    constructor(public form: DryvForm, public name: string, public options: DryvGroupOptions) {
     }
 
     fieldValidated(field?: DryvField): boolean {
@@ -21,10 +20,15 @@ export class DryvGroup {
         if (!changed) {
             return this.lastHandled;
         }
-        
+
         this.validationResult = result;
 
-        this.lastHandled = (this.handle && this.handle(this.validationResult)) ?? false;
+        this.lastHandled = (this.options.handle && this.options.handle(this.validationResult)) ?? false;
+        
+        if (this.options.validated) {
+            this.options.validated(this.validationResult);
+        }
+        
         return this.lastHandled;
 
     }

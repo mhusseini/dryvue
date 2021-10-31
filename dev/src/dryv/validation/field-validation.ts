@@ -70,6 +70,7 @@ async function validateUntilFirstError(field: DryvField,
         return undefined;
     }
 
+    const childContext = Object.assign({}, context, {dryv: field.options});
     const nextStack = stack.concat([field.path]);
 
     for (const rule of field.rules) {
@@ -94,7 +95,7 @@ async function validateUntilFirstError(field: DryvField,
             continue;
         }
 
-        const promiseF = () => validateRule(rule, model, context);
+        const promiseF = () => validateRule(rule, model, childContext);
         const promise = rule.group
             ? context.groupValidationPromises[rule.group] ?? (context.groupValidationPromises[rule.group] = promiseF())
             : promiseF();

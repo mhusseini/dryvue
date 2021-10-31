@@ -1,24 +1,21 @@
-import {DryvFormValidationContext, DryvRule, DryvValidationResult} from ".";
+import {DryvFieldOptions, DryvFormValidationContext, DryvRule, DryvValidationResult} from ".";
 import {DryvForm} from "./DryvForm";
 import {DryvGroup} from "@/dryv/DryvGroup";
 import {validate, revalidate} from "@/dryv/validation/field-validation";
 
 export class DryvField {
     isDisabled = false;
-    validated?: (validationResult: DryvValidationResult | undefined) => void;
-    configured?: (rules: Array<DryvRule>) => void;
     validationResult?: DryvValidationResult | undefined;
     rules: Array<DryvRule> = [];
     model?: unknown;
     validationContext?: DryvFormValidationContext;
     groups: Array<DryvGroup> = [];
     showValidationResult = true;
-    debounce = 0;
 
     private debounceTimer = 0;
     private validationRun = 0;
 
-    constructor(public form: DryvForm, public path: string = "") {
+    constructor(public form: DryvForm, public path: string, public options: DryvFieldOptions) {
         // nop
     }
 
@@ -27,14 +24,14 @@ export class DryvField {
     }
 
     async revalidate(): Promise<void> {
-        if (this.debounce > 0) {
+        if (this.options.debounce) {
             if (this.debounceTimer) {
                 clearTimeout(this.debounceTimer);
             }
             this.debounceTimer = setTimeout(async () => {
                 this.debounceTimer = 0;
                 await revalidate(this);
-            }, this.debounce);
+            }, this.options.debounce);
         } else {
             await revalidate(this);
         }
@@ -44,8 +41,8 @@ export class DryvField {
         this.validationResult = validationResult;
         this.showValidationResult = !this.form.fieldValidated(this);
 
-        if (this.validated) {
-            this.validated(this.validationResult);
+        if (this.options.validated) {
+            this.options.validated(this);
         }
     }
 }

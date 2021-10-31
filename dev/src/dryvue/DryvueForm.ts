@@ -1,5 +1,10 @@
 import Vue from "vue";
-import {DryvForm, DryvFormValidationResult, DryvValidationResult, DryvValidationSet} from "@/dryv";
+import {
+    DryvForm,
+    DryvFormOptions,
+    DryvFormValidationResult,
+    DryvValidationResult,
+} from "@/dryv";
 import Component from "vue-class-component";
 
 @Component
@@ -8,7 +13,7 @@ export class DryvueForm extends Vue {
     hasWarnings = false;
     $dryv: {
         form: DryvForm,
-        validate: (validationSet: DryvValidationSet | string, model: unknown) => Promise<DryvFormValidationResult | null>,
+        validate: (model: unknown) => Promise<DryvFormValidationResult | null>,
         sync: (validationResults: { [path: string]: DryvValidationResult | undefined }) => boolean
     } = {form: undefined as any, validate: undefined as any, sync: undefined as any};
 
@@ -16,20 +21,23 @@ export class DryvueForm extends Vue {
         return !this.hasErrors && !this.hasWarnings;
     }
 
-    created() {
+    configureDryv(options: DryvFormOptions | string) {
+        if(typeof options === "string"){
+            options = {validationSet: options} as DryvFormOptions;
+        }
         this.$dryv = {
-            form: new DryvForm(),
-            validate: (s, m) => validate(this, s, m),
+            form: new DryvForm(options),
+            validate: m => validate(this, m),
             sync: r => this.$dryv.form.setValidationResult(r)
         };
     }
 }
 
-async function validate(vueForm: DryvueForm, validationSet: DryvValidationSet | string, model: unknown): Promise<DryvFormValidationResult | null> {
+async function validate(vueForm: DryvueForm, model: unknown): Promise<DryvFormValidationResult | null> {
     vueForm.hasErrors = false;
     vueForm.hasWarnings = false;
 
-    const result = await vueForm.$dryv.form.validate(validationSet, model);
+    const result = await vueForm.$dryv.form.validate(model);
 
     vueForm.hasErrors = (result.errors?.length ?? 0) > 0;
     vueForm.hasWarnings = (result.warnings?.length ?? 0) > 0;

@@ -1,6 +1,6 @@
 import Vue from "vue";
 import Component from 'vue-class-component'
-import {DryvField, DryvRule, DryvValidationResult} from "@/dryv";
+import {DryvField, DryvFieldOptions, DryvValidationResult} from "@/dryv";
 import {findParentForm} from "@/dryvue/util/findParentForm";
 import {findFieldPath} from "@/dryvue/util/findFieldPath";
 
@@ -13,11 +13,16 @@ export class DryvueField extends Vue {
     annotations: { [name: string]: any } = {};
     $dryv: {
         field: DryvField,
-        validate: () => Promise<DryvValidationResult | undefined>
+        validate: () => Promise<void>
     } = {field: undefined as any, validate: undefined as any}
+    private options?: DryvFieldOptions;
 
     get success(): boolean {
         return !this.error && !this.warning;
+    }
+
+    configureDryv(options: DryvFieldOptions) {
+        this.options = options;
     }
 
     mounted(): void {
@@ -26,13 +31,28 @@ export class DryvueField extends Vue {
             return;
         }
 
-        const dryvField = new DryvField(dryvForm);
+        if (!this.options) {
+            this.options = {};
+        }
 
-        dryvField.path = findFieldPath(this);
-        dryvField.validated = r => onValidated(this, r);
-        dryvField.configured = r => onConfigured(this, r);
-        
-        dryvForm.registerField(dryvField);
+        const callback = this.options.validated;
+        this.options.validated = f => {
+            onValidated(this, f.validationResult);
+            if (callback) {
+                callback(f);
+            }
+        }
+
+        const dryvField = dryvForm.registerField(findFieldPath(this), this.options);
+
+        dryvField.rules
+            .filter(r => r.annotations)
+            .map(r => r.annotations)
+            .flat()
+            .map(anns => anns && Object.entries(anns).map(x => ({key: x[0], value: x[1]})))
+            .filter(ann => ann)
+            .flat()
+            .forEach(ann => ann && this.$set(this.annotations, ann.key, ann.value));
 
         this.$dryv = {
             field: dryvField,
@@ -40,7 +60,6 @@ export class DryvueField extends Vue {
         };
     }
 }
-
 
 function onValidated(vueField: DryvueField, result: DryvValidationResult | undefined): void {
     vueField.error = undefined;
@@ -57,16 +76,4 @@ function onValidated(vueField: DryvueField, result: DryvValidationResult | undef
     } else if (result.type === "warning") {
         vueField.warning = result.text;
     }
-}
-
-function onConfigured(vueField: DryvueField, rules: Array<DryvRule>) {
-    vueField.annotations = {};
-    rules
-        .filter(r => (r.annotations?.length ?? 0) > 0)
-        .map(r => r.annotations)
-        .flat()
-        .map(anns => anns && Object.entries(anns).map(x => ({key: x[0], value: x[1]})))
-        .filter(ann => ann)
-        .flat()
-        .forEach(ann => ann && (vueField.annotations[ann.key] = vueField.annotations[ann.value]));
 }

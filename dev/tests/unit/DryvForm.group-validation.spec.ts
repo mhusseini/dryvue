@@ -23,9 +23,9 @@ describe("DryvForm", () => {
             },
         };
 
-        const form = new DryvForm("field1", "field2", "field3");
+        const form = new DryvForm({validationSet}, "field1", "field2", "field3");
 
-        await form.validate(validationSet, {});
+        await form.validate({});
         expect(validate).toHaveBeenCalledTimes(1);
     });
 
@@ -42,11 +42,9 @@ describe("DryvForm", () => {
             },
         };
 
-        const form = new DryvForm("field1", "field2");
+        const form = new DryvForm({validationSet}, "field1", "field2");
 
-        await form.validate(validationSet, {
-            field2: "text"
-        });
+        await form.validate({field2: "text"});
         expect(validate).toHaveBeenCalledTimes(1);
     });
 
@@ -63,8 +61,8 @@ describe("DryvForm", () => {
             },
         };
 
-        const form = new DryvForm("field1", "field2");
-        await form.validate(validationSet, {});
+        const form = new DryvForm({validationSet}, "field1", "field2");
+        await form.validate({});
 
         expect(validate).toHaveBeenCalledTimes(0);
     });
@@ -75,12 +73,9 @@ describe("DryvForm", () => {
             field2: "value2",
         };
 
-        const form = new DryvForm("field1", "field2");
+        const form = new DryvForm({validationSet}, "field1", "field2");
 
-        await form.validate(
-            validationSet,
-            model
-        );
+        await form.validate(model);
 
         expect(form.fields.field1.validationResult).toBeUndefined()
         expect(form.fields.field2.validationResult).toBeUndefined();
@@ -92,12 +87,9 @@ describe("DryvForm", () => {
             field2: "",
         };
 
-        const form = new DryvForm("field1", "field2");
+        const form = new DryvForm({validationSet}, "field1", "field2");
 
-        await form.validate(
-            validationSet,
-            model
-        );
+        await form.validate(model);
 
         expect(form.fields.field1.validationResult).not.toBeUndefined()
         expect(form.fields.field2.validationResult).not.toBeUndefined();
@@ -121,8 +113,8 @@ describe("DryvForm", () => {
                 },
             }
         ;
-        const form = new DryvForm("field1", "field2");
-        await form.validate(validationSet, model);
+        const form = new DryvForm({validationSet}, "field1", "field2");
+        await form.validate(model);
 
         expect(form.fields.field1.validationResult).toBeUndefined()
         expect(form.fields.field2.validationResult).not.toBeUndefined();
@@ -163,22 +155,22 @@ describe("DryvForm", () => {
         let field2Error: string | undefined;
         let groupError: string | undefined;
 
-        const form = new DryvForm("field1", "field2");
+        const form = new DryvForm({validationSet}, "field1", "field2");
         form.fields.field1.validated = () => field1Error = form.fields.field1.validationResult?.text;
         form.fields.field2.validated = () => field2Error = form.fields.field2.validationResult?.text;
-        form.registerGroup(new DryvGroup("g", form)).handle = () => {
+        form.registerGroup("g").handle = () => {
             groupError = form.groups.g.validationResult?.text;
             return true;
         };
-        
-        await form.validate(validationSet, model);
+
+        await form.validate(model);
 
         expect(form.fields.field1.showValidationResult).not.toBeFalsy();
         expect(form.fields.field2.showValidationResult).not.toBeFalsy();
         expect(field1Error).toBeUndefined();
         expect(field2Error).not.toBeUndefined();
         expect(groupError).toBeUndefined();
-        
+
         model.field2 = "X";
 
         await form.fields.field2.revalidate();

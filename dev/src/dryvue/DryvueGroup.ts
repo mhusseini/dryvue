@@ -1,5 +1,5 @@
 import Vue from "vue";
-import {DryvGroup, DryvValidationResult} from "@/dryv";
+import {DryvGroup, DryvGroupOptions, DryvValidationResult} from "@/dryv";
 import Component from "vue-class-component";
 import {findParentForm} from "@/dryvue/util/findParentForm";
 
@@ -16,10 +16,14 @@ export class DryvueGroup extends DryvueGroupProps {
     $dryv: {
         group: DryvGroup
     } = {group: {} as any}
-
+    private options?: DryvGroupOptions;
 
     get success(): boolean {
         return !this.error && !this.warning;
+    }
+
+    configureDryv(options: DryvGroupOptions) {
+        this.options = options;
     }
 
     mounted() {
@@ -28,28 +32,33 @@ export class DryvueGroup extends DryvueGroupProps {
             return;
         }
 
-        const dryvGroup = new DryvGroup(this.name, dryvForm);
-        dryvForm.registerGroup(dryvGroup);
+        if (!this.options) {
+            this.options = {};
+        }
 
-        dryvGroup.handle = r => handleValidation(this, r);
+        if (!this.options.handle) {
+            this.options.handle = r => DryvueGroup.handleValidation(this, r);
+        }
+
+        const dryvGroup = dryvForm.registerGroup(this.name, this.options);
         this.$dryv = {group: dryvGroup};
     }
-}
 
-function handleValidation(group: DryvueGroup, result?: DryvValidationResult) {
-    switch (result?.type) {
-        case "error":
-            group.error = result?.text;
-            group.warning = undefined;
-            break;
-        case "warning":
-            group.error = undefined;
-            group.warning = result?.text;
-            break;
-        default:
-            group.error = undefined;
-            group.warning = undefined;
-            break;
+    static handleValidation(group: DryvueGroup, result?: DryvValidationResult) {
+        switch (result?.type) {
+            case "error":
+                group.error = result?.text;
+                group.warning = undefined;
+                break;
+            case "warning":
+                group.error = undefined;
+                group.warning = result?.text;
+                break;
+            default:
+                group.error = undefined;
+                group.warning = undefined;
+                break;
+        }
+        return true;
     }
-    return true;
 }

@@ -1,9 +1,10 @@
-import {DryvConfiguration, DryvOptions} from "@/dryv/index";
+import {DryvConfiguration, DryvFormValidationContext, DryvOptions, DryvValidationResult} from "@/dryv/index";
 
 async function defaultGet(data: any, url: string): Promise<any> {
     const query = !data ? "" : "?" + Object.entries(data)
         .map(e => `${encodeURIComponent(e[0])}=${encodeURIComponent(e[1] as any)}`)
         .join("&");
+    
     const result = await fetch(url + query);
 
     return await result.json();
@@ -22,12 +23,27 @@ async function defaultPost(url: string, data: any): Promise<any> {
     return await result.json();
 }
 
-async function defaultCall(method: "GET" | "POST", url: string, data: any): Promise<any> {
-    const response = method === "GET"
-        ? await Dryv.config.get(url, data)
-        : await Dryv.config.post(url, data);
+async function defaultCall(url: string, method: "GET" | "POST", data: any): Promise<any> {
+    try {
+        const response = method === "GET"
+            ? await Dryv.config.get(url, data)
+            : await Dryv.config.post(url, data);
 
-    return response.data;
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        // Don't let the exception block further validation
+        // and let the server validation handle this field correctly.
+        return undefined;
+    }
+}
+
+function defaultHandleResult(context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult): DryvValidationResult {
+    return result;
+}
+
+function defaultValueOfDate(value: string, locale: string, format: string) {
+    return new Date(value).getTime();
 }
 
 export class Dryv {
@@ -37,10 +53,17 @@ export class Dryv {
     }
 
     static configure(options: DryvOptions): DryvConfiguration {
-        return Dryv._config = Object.assign({}, options, {
+        Dryv._config = Object.assign({}, {
             get: defaultGet,
             post: defaultPost,
-            callServer: defaultCall
-        } as DryvConfiguration);
+            callServer: defaultCall,
+            handleResult: defaultHandleResult,
+            valueOfDate: defaultValueOfDate
+        } as DryvConfiguration, options);
+        return Dryv._config;
+    }
+
+    static withDefaults(options: DryvOptions): DryvConfiguration {
+        return Object.assign({}, Dryv.config, options);
     }
 }

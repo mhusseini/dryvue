@@ -11,6 +11,11 @@ import Vue from "vue";
 import {DryvueGroup} from "@/dryvue";
 
 export default Vue.extend({
-  mixins: [DryvueGroup]
+  mixins: [DryvueGroup],
+  created() {
+    this.configureDryv({
+      validated: () => console.log("*** validated group " + this.$dryv.group.name)
+    });
+  }
 });
 </script>

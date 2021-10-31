@@ -1,6 +1,7 @@
 <template>
   <div>
-    <input :value="value" @change="changed" ref="input" v-bind:class="{error}"/>
+    <span>{{ label }}</span><span v-if="annotations.required">*</span>
+    <input :value="value" @input="changed" ref="input" v-bind:class="{error}"/>
     <p v-if="error && showValidationResult">{{ error }} </p>
     <p v-if="warning && showValidationResult">{{ warning }} </p>
     <p v-if="success && isValidated">&#x2713;</p>
@@ -13,20 +14,19 @@ import {DryvueField} from "@/dryvue";
 export default Vue.extend({
   mixins: [DryvueField],
   props: {
-    value: unknow,
-    debounce: number
+    value: {},
+    label: String,
+    debounce: {
+      default: 100
+    }
   },
-  watch: {
-    debounce() {
-      this.$dryv.field.debounce = this.debounce;
-    },
-    async value() {
-      await this.$dryv.validate();
-    },
+  created() {
+    this.configureDryv({debounce: this.debounce});
   },
   methods: {
     async changed() {
       this.$emit("input", (this.$refs.input as HTMLInputElement).value);
+      this.$dryv.validate();
     },
   },
 });

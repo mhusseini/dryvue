@@ -12,6 +12,7 @@
     "axios": "^0.24.0",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "core-js": "^3.6.5",
+    "moment": "^2.29.1",
     "vue": "^2.6.11",
     "vue-class-component": "^7.2.6"
   },

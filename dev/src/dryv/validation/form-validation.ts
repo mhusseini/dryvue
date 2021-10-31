@@ -1,5 +1,5 @@
 import {DryvForm} from "@/dryv/DryvForm";
-import {Dryv, DryvFormValidationContext, DryvRule, DryvValidationContext, DryvValidationResult} from "@/dryv";
+import {DryvFormValidationContext, DryvRule, DryvValidationContext} from "@/dryv";
 
 export async function validate(form: DryvForm, model: unknown): Promise<void> {
     try {
@@ -34,17 +34,18 @@ export async function beginValidation(form: DryvForm): Promise<DryvFormValidatio
     }
 
     const validationContext: DryvFormValidationContext = {
-        get: Dryv.config.get,
-        post: Dryv.config.post,
-        callServer: Dryv.config.callServer,
+        dryv: {
+            get: form.options.get,
+            post: form.options.post,
+            handleResult: form.options.handleResult,
+            callServer: form.options.callServer,
+            valueOfDate: form.options.valueOfDate,
+        },
         fieldValidationPromises: {},
         groupValidationPromises: {},
         validatedFields: {},
         groupValidatingField: {},
         groupResults: {},
-        handleResult(context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult): DryvValidationResult {
-            return result;
-        }
     };
 
     form.validationContext = validationContext;

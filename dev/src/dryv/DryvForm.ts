@@ -1,4 +1,12 @@
-import {DryvValidationResult, DryvValidationSet} from "./index";
+import {
+    Dryv,
+    DryvConfiguration,
+    DryvFormOptions,
+    DryvGroupOptions,
+    DryvOptions,
+    DryvValidationResult,
+    DryvValidationSet
+} from "./index";
 import {DryvFormValidationContext, DryvFormValidationResult} from ".";
 import {windowDryvValidationSetProvider} from "./DryvValidationSetProvider";
 import {DryvField} from "@/dryv/DryvField";
@@ -14,30 +22,67 @@ export class DryvForm {
     fields: { [path: string]: DryvField };
     groups: { [name: string]: DryvGroup } = {};
     validationContext?: DryvFormValidationContext = undefined;
-    validationSet?: DryvValidationSet;
+    validationSet: DryvValidationSet;
     errors?: Array<DryvField>;
     warnings?: Array<DryvField>;
     warningHash?: number;
     errorHash?: number;
+    options: DryvConfiguration;
 
     get success(): boolean {
         return !(this.errors?.length) && !(this.warnings?.length)
     }
 
-    //private entryFields: DryvField[] = [];
-    private lastHandled = false;
-
-    constructor(...fields: Array<string>) {
+    constructor(options: DryvFormOptions, ...fields: Array<string>) {
         this.fields = {};
-        fields.forEach(path => this.registerField(new DryvField(this, path)))
+        this.options = Dryv.withDefaults(options);
+
+        const validationSet = typeof options.validationSet === "string"
+            ? DryvForm.findValidationSet(options.validationSet)
+            : options.validationSet;
+
+        if (validationSet) {
+            this.validationSet = validationSet;
+        } else {
+            throw new Error("A validation set must be specified.");
+        }
+
+        fields.forEach(path => this.registerField(path))
     }
 
-    registerField(field: DryvField): DryvField {
-        return this.fields[field.path] = field;
+    registerField(path: string, options?: DryvOptions): DryvField {
+        options = Object.assign({}, this.options, options);
+
+        let field = this.fields[path];
+        if (field) {
+            field.options = options;
+            return field;
+        }
+
+        field = this.fields[path] = new DryvField(this, path, options);
+        field.path = path;
+        field.rules = this.validationSet.validators[field.path] ?? [];
+        field.rules
+            .filter(rule => rule.group)
+            .map(rule => this.registerGroup(rule.group as string))
+            .forEach(group => {
+                field.groups.push(group);
+                group.fields.push(field);
+            });
+
+        return field;
     }
 
-    registerGroup(group: DryvGroup): DryvGroup {
-        return this.groups[group.name] = group;
+    registerGroup(name: string, options?: DryvGroupOptions): DryvGroup {
+        options = Object.assign({}, this.options, options);
+
+        if (this.groups[name]) {
+            const group = this.groups[name];
+            group.options = options;
+            return group;
+        }
+
+        return this.groups[name] = new DryvGroup(this, name, options);
     }
 
     /**
@@ -63,23 +108,10 @@ export class DryvForm {
             .filter(group => group.validationResult && this.validationContext && !this.validationContext.groupResults[group.name])
             .forEach(group => group.fieldValidated());
 
-        this.lastHandled = handled;
         return handled;
     }
 
-    async validate(
-        validationSetInput: DryvValidationSet | string,
-        model: unknown
-    ): Promise<DryvFormValidationResult> {
-        const validationSet = DryvForm.findValidationSet(validationSetInput);
-        if (!validationSet) {
-            return {success: true};
-        }
-
-        if (this.validationSet !== validationSet) {
-            this.registerValidationSet(validationSet);
-        }
-
+    async validate(model: unknown): Promise<DryvFormValidationResult> {
         this.model = model;
         this.disableRecalculation = true;
 
@@ -89,11 +121,7 @@ export class DryvForm {
             this.disableRecalculation = false;
         }
 
-        const fields = Object.values(this.fields);
-        this.errors = fields.filter(field => field.validationResult?.type === "error");
-        this.warnings = fields.filter(field => field.validationResult?.type === "warning");
-        this.warningHash = calculateHash(this.warnings.map(w => w.path + "|" + w.validationResult?.text).join("|"));
-        this.errorHash = calculateHash(this.errors.map(w => w.path + "|" + w.validationResult?.text).join("|"));
+        this.updateState();
 
         return {
             errors: this.errors,
@@ -105,68 +133,26 @@ export class DryvForm {
     }
 
     setValidationResult(validationResults: { [path: string]: DryvValidationResult | undefined }): boolean {
-        Object.entries(validationResults)
-            .forEach(entry => {
-                    const field = this.fields[entry[0]];
-                    if (!field) {
-                        return;
-                    }
+        Object.values(this.fields)
+            .forEach(field => field
+                .setValidationResult(validationResults[field.path]));
 
-                    field.setValidationResult(entry[1]);
-                }
-            )
+        this.updateState();
 
         return this.success;
     }
 
-    registerValidationSet(validationSet: DryvValidationSet) {
-        this.registerFieldsWithGroups(validationSet);
-        this.registerRulesWithFields(validationSet);
-
-        this.validationSet = validationSet;
-
-        Object
-            .values(this.fields)
-            .forEach(field => field.configured && field.configured(field.rules));
+    private updateState() {
+        const fields = Object.values(this.fields);
+        this.errors = fields.filter(field => field.validationResult?.type === "error");
+        this.warnings = fields.filter(field => field.validationResult?.type === "warning");
+        this.warningHash = calculateHash(this.warnings.map(w => w.path + "|" + w.validationResult?.text).join("|"));
+        this.errorHash = calculateHash(this.errors.map(w => w.path + "|" + w.validationResult?.text).join("|"));
     }
 
-    /**
-     Map fields to groups, depending the validation set.
-     @param validationSet The Dryv validation set to get the mapping from.
-     */
-    private registerFieldsWithGroups(validationSet: DryvValidationSet) {
-        Object.values(this.fields).forEach(field => field.groups = []);
-        Object.values(this.groups).forEach(group => group.fields = []);
-        Object.values(validationSet.validators)
-            .map(rules => rules
-                .filter(rule => rule.group && !this.groups[rule.group])
-                .forEach(rule => this.registerGroup(new DryvGroup(rule.group as string, this))))
-        Object.entries(validationSet.validators)
-            .map(item => ({path: item[0], rule: item[1]}))
-            .map(item => item.rule
-                .filter(v => v.group)
-                .map(v => ({group: this.groups[v.group ?? ""], field: this.fields[item.path]}))
-                .filter(v => v.group && v.field))
-            .flat()
-            .forEach(v => {
-                v.field.groups.push(v.group);
-                v.group.fields.push(v.field);
-            });
-    }
-
-    /**
-     Map validation rules to fields, depending the validation set.
-     @param validationSet The Dryv validation set to get the mapping from.
-     */
-    private registerRulesWithFields(validationSet: DryvValidationSet) {
-        Object.values(this.fields).forEach(field => field.rules = validationSet.validators[field.path] ?? []);
-    }
-
-    private static findValidationSet(validationSetInput: DryvValidationSet | string) {
+    static findValidationSet(validationSetInput: DryvValidationSet | string) {
         return typeof validationSetInput === "string"
             ? windowDryvValidationSetProvider.get(validationSetInput)
             : validationSetInput;
     }
 }
-
-
