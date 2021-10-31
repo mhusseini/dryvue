@@ -4,7 +4,7 @@ async function defaultGet(data: any, url: string): Promise<any> {
     const query = !data ? "" : "?" + Object.entries(data)
         .map(e => `${encodeURIComponent(e[0])}=${encodeURIComponent(e[1] as any)}`)
         .join("&");
-    
+
     const result = await fetch(url + query);
 
     return await result.json();

@@ -68,16 +68,20 @@ export interface DryvOptions {
     valueOfDate?: (value: string, locale: string, format: string) => unknown;
 }
 
-export interface DryvFormOptions extends DryvOptions {
+export interface DryvFormOptions  {
     validationSet: DryvValidationSet | string;
+    handleResult?: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    valueOfDate?: (value: string, locale: string, format: string) => unknown;
 }
 
-export interface DryvFieldOptions extends DryvOptions {
+export interface DryvFieldOptions  {
     validated?: (field: DryvField) => void;
     debounce?: number;
+    handleResult?: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    valueOfDate?: (value: string, locale: string, format: string) => unknown;
 }
 
-export interface DryvGroupOptions extends DryvOptions {
+export interface DryvGroupOptions {
     handle?: (validationResult?: DryvValidationResult) => boolean | undefined;
     validated?: (validationResult?: DryvValidationResult) => void;
 }
