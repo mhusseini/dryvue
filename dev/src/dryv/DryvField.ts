@@ -16,13 +16,14 @@ export class DryvField {
     debounce = 0;
 
     private debounceTimer = 0;
+    private validationRun = 0;
 
     constructor(public form: DryvForm, public path: string = "") {
         // nop
     }
 
-    async validate(model: unknown, context: DryvFormValidationContext, stack?: Array<string>): Promise<DryvValidationResult | undefined> {
-        return validate(this, model, context, stack);
+    async validate(model: unknown, context: DryvFormValidationContext, stack?: Array<string>): Promise<void> {
+        await validate(this, model, context, stack);
     }
 
     async revalidate(): Promise<void> {
@@ -36,6 +37,15 @@ export class DryvField {
             }, this.debounce);
         } else {
             await revalidate(this);
+        }
+    }
+
+    setValidationResult(validationResult: DryvValidationResult | undefined) {
+        this.validationResult = validationResult;
+        this.showValidationResult = !this.form.fieldValidated(this);
+
+        if (this.validated) {
+            this.validated(this.validationResult);
         }
     }
 }

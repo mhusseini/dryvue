@@ -9,11 +9,15 @@ export interface DryvValidationContext {
     get: (url: string, data: any) => Promise<any>;
     post: (url: string, data: any) => Promise<any>;
     callServer: (url: string, method: "GET" | "POST", data: any) => Promise<any>;
+    handleResult: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
 }
 
 export interface DryvFormValidationResult {
-    errors?: DryvValidationResult[];
-    warnings?: DryvValidationResult[];
+    success: boolean;
+    errors?: Array<DryvField>;
+    warnings?: Array<DryvField>;
+    warningHash?: number;
+    errorHash?: number;
 }
 
 export interface DryvValidationResult {

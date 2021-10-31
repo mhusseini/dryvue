@@ -1,6 +1,10 @@
 import {DryvField, DryvFormValidationContext, DryvRule, DryvValidationResult} from "@/dryv";
 import {beginValidation, endValidation} from "@/dryv/validation/form-validation";
 
+interface DryvFieldPrivate {
+    validationRun: number;
+}
+
 export async function revalidate(field: DryvField): Promise<DryvValidationResult | undefined> {
     if (!field.rules.length || !field.model) {
         return undefined;
@@ -9,7 +13,7 @@ export async function revalidate(field: DryvField): Promise<DryvValidationResult
     const validationContext = await beginValidation(field.form);
 
     try {
-        return await validate(field, field.model, validationContext, []);
+        await validate(field, field.model, validationContext, []);
     } finally {
         endValidation(field.form);
     }
@@ -19,10 +23,10 @@ export async function validate(field: DryvField,
                                model: unknown,
                                context: DryvFormValidationContext,
                                stack?: Array<string>
-): Promise<DryvValidationResult | undefined> {
+): Promise<void> {
     if (context.fieldValidationPromises[field.path]) {
         console.log(`*** already validating ${field.path}`);
-        return await context.fieldValidationPromises[field.path] as Promise<DryvValidationResult | undefined>;
+        return await context.fieldValidationPromises[field.path] as Promise<void>;
     }
 
     console.log(`*** validate ${field.path}`);
@@ -35,12 +39,16 @@ export async function validate(field: DryvField,
     const promise = validateUntilFirstError(field, model, context, stack ?? []);
     context.fieldValidationPromises[field.path] = promise;
 
-    field.validationResult = await promise;
-    field.showValidationResult = !field.form.fieldValidated(field);
+    const _field = field as unknown as DryvFieldPrivate;
+    const validationRun = ++_field.validationRun;
 
-    if (field.validated) {
-        field.validated(field.validationResult);
+    const validationResult = await promise;
+
+    if (validationRun !== _field.validationRun) {
+        return;
     }
+
+    field.setValidationResult(validationResult);
 
     const fields: { [path: string]: DryvField } = {};
 
@@ -51,8 +59,6 @@ export async function validate(field: DryvField,
     Object.values(fields)
         .filter(field => !context.validatedFields[field.path])
         .forEach(field => field.validate(model, context, stack ?? []));
-
-    return field.validationResult;
 }
 
 async function validateUntilFirstError(field: DryvField,

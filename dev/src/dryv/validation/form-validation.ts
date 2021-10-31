@@ -1,7 +1,7 @@
 import {DryvForm} from "@/dryv/DryvForm";
 import {Dryv, DryvFormValidationContext, DryvRule, DryvValidationContext, DryvValidationResult} from "@/dryv";
 
-export async function validate(form: DryvForm, model: unknown): Promise<Array<DryvValidationResult | undefined>> {
+export async function validate(form: DryvForm, model: unknown): Promise<void> {
     try {
         Object.values(form.groups).forEach(g => g.disableAutoValidate = true);
         Object.values(form.fields).forEach(f => f.validationResult = undefined);
@@ -11,10 +11,9 @@ export async function validate(form: DryvForm, model: unknown): Promise<Array<Dr
 
         console.log(`*** Ready to validate: ${fields.map(f => f.path).join(", ")}.`);
 
-        return (await Promise.all(
+        await Promise.all(
             fields.map((field) => field
-                .validate(model, validationContext))))
-            .filter(result => result?.text);
+                .validate(model, validationContext)));
     } finally {
         endValidation(form);
         Object.values(form.groups).forEach(g => g.disableAutoValidate = false);
@@ -42,7 +41,10 @@ export async function beginValidation(form: DryvForm): Promise<DryvFormValidatio
         groupValidationPromises: {},
         validatedFields: {},
         groupValidatingField: {},
-        groupResults: {}
+        groupResults: {},
+        handleResult(context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult): DryvValidationResult {
+            return result;
+        }
     };
 
     form.validationContext = validationContext;

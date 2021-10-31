@@ -4,6 +4,7 @@ import {windowDryvValidationSetProvider} from "./DryvValidationSetProvider";
 import {DryvField} from "@/dryv/DryvField";
 import {DryvGroup} from "@/dryv/DryvGroup";
 import {validate} from "@/dryv/validation/form-validation";
+import {calculateHash} from "@/dryv/util/calculateHash";
 
 export class DryvForm {
     private disableRecalculation = false;
@@ -14,6 +15,14 @@ export class DryvForm {
     groups: { [name: string]: DryvGroup } = {};
     validationContext?: DryvFormValidationContext = undefined;
     validationSet?: DryvValidationSet;
+    errors?: Array<DryvField>;
+    warnings?: Array<DryvField>;
+    warningHash?: number;
+    errorHash?: number;
+
+    get success(): boolean {
+        return !(this.errors?.length) && !(this.warnings?.length)
+    }
 
     //private entryFields: DryvField[] = [];
     private lastHandled = false;
@@ -64,7 +73,7 @@ export class DryvForm {
     ): Promise<DryvFormValidationResult> {
         const validationSet = DryvForm.findValidationSet(validationSetInput);
         if (!validationSet) {
-            return {};
+            return {success: true};
         }
 
         if (this.validationSet !== validationSet) {
@@ -73,29 +82,44 @@ export class DryvForm {
 
         this.model = model;
         this.disableRecalculation = true;
-        const resultTypes: { [type: string]: Array<DryvValidationResult> } = {};
-        
+
         try {
-            const fieldResults = await validate(this, model);
-            fieldResults.forEach(r => r && r.type && (
-                resultTypes[r.type]
-                    ? resultTypes[r.type].push(r)
-                    : (resultTypes[r.type] = [r])
-            ));
+            await validate(this, model);
         } finally {
             this.disableRecalculation = false;
         }
 
-        const errors = resultTypes["error"];
-        const warnings = resultTypes["warning"];
+        const fields = Object.values(this.fields);
+        this.errors = fields.filter(field => field.validationResult?.type === "error");
+        this.warnings = fields.filter(field => field.validationResult?.type === "warning");
+        this.warningHash = calculateHash(this.warnings.map(w => w.path + "|" + w.validationResult?.text).join("|"));
+        this.errorHash = calculateHash(this.errors.map(w => w.path + "|" + w.validationResult?.text).join("|"));
 
         return {
-            errors: errors && errors.length ? errors : undefined,
-            warnings: warnings && warnings.length ? warnings : undefined,
+            errors: this.errors,
+            warnings: this.warnings,
+            success: this.success,
+            warningHash: this.warningHash,
+            errorHash: this.errorHash
         };
     }
 
-    private registerValidationSet(validationSet: DryvValidationSet) {
+    setValidationResult(validationResults: { [path: string]: DryvValidationResult | undefined }): boolean {
+        Object.entries(validationResults)
+            .forEach(entry => {
+                    const field = this.fields[entry[0]];
+                    if (!field) {
+                        return;
+                    }
+
+                    field.setValidationResult(entry[1]);
+                }
+            )
+
+        return this.success;
+    }
+
+    registerValidationSet(validationSet: DryvValidationSet) {
         this.registerFieldsWithGroups(validationSet);
         this.registerRulesWithFields(validationSet);
 
@@ -144,3 +168,5 @@ export class DryvForm {
             : validationSetInput;
     }
 }
+
+

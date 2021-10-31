@@ -22,21 +22,37 @@ import {DryvueForm} from "@/dryvue";
 import FormField from "./form-field.vue";
 import FormGroup from "./form-group";
 import Container from "./container.vue";
+import axios from "axios"
 
 export default Vue.extend({
   components: {FormField, FormGroup, Container},
   mixins: [DryvueForm],
   data() {
     return {
+      warningHash = 0,
       model: {
         firstName: null,
         lastName: null,
       },
     };
   },
+  created() {
+  },
   methods: {
     async send() {
-      await this.$dryv.validate("form1", this.model);
+      const result = await this.$dryv.validate("form1", this.model);
+
+      if (result.errors || result.warnings && result.warningHash !== this.warningHash) {
+        this.warningHash = result.warningHash;
+        return;
+      }
+
+      this.warningHash = result.warningHash;
+
+      const serverResponse = axios.post("someurl", this.model);
+      if (this.$dryv.sync(serverResponse.data.messages)) {
+        // success
+      }
     },
   },
 });
