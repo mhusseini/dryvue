@@ -13,6 +13,9 @@ export class DryvField {
     validationContext?: DryvFormValidationContext;
     groups: Array<DryvGroup> = [];
     showValidationResult = true;
+    debounce = 0;
+
+    private debounceTimer = 0;
 
     constructor(public form: DryvForm, public path: string = "") {
         // nop
@@ -22,7 +25,17 @@ export class DryvField {
         return validate(this, model, context, stack);
     }
 
-    async revalidate(): Promise<DryvValidationResult | undefined> {
-        return revalidate(this);
+    async revalidate(): Promise<void> {
+        if (this.debounce > 0) {
+            if (this.debounceTimer) {
+                clearTimeout(this.debounceTimer);
+            }
+            this.debounceTimer = setTimeout(async () => {
+                this.debounceTimer = 0;
+                await revalidate(this);
+            }, this.debounce);
+        } else {
+            await revalidate(this);
+        }
     }
 }

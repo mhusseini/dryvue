@@ -12,8 +12,14 @@ import {DryvueField} from "@/dryvue";
 
 export default Vue.extend({
   mixins: [DryvueField],
-  props: ["value"],
+  props: {
+    value: unknow,
+    debounce: number
+  },
   watch: {
+    debounce() {
+      this.$dryv.field.debounce = this.debounce;
+    },
     async value() {
       await this.$dryv.validate();
     },
