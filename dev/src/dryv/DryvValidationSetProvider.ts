@@ -1,8 +1,4 @@
-import { DryvValidationSet } from ".";
-
-export interface DryvValidationSetProvider {
-  get(validationSetName: string): DryvValidationSet;
-}
+import {DryvValidationSetProvider} from ".";
 
 export const windowDryvValidationSetProvider: DryvValidationSetProvider = {
   get(validationSetName) {

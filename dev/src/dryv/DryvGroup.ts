@@ -1,8 +1,8 @@
 import {DryvValidationResult} from "@/dryv/index";
-import DryvField from "@/dryv/DryvField";
-import DryvForm from "@/dryv/DryvForm";
+import {DryvField} from "@/dryv/DryvField";
+import {DryvForm} from "@/dryv/DryvForm";
 
-export default class DryvGroup {
+export class DryvGroup {
     handle?: (validationResult?: DryvValidationResult) => boolean | undefined;
     validationResult?: DryvValidationResult;
     fields: Array<DryvField> = [];

@@ -1,40 +1,36 @@
 import Vue from "vue";
-import DryvForm from "../dryv/DryvForm";
-import { DryvueFormVue } from ".";
-import { DryvFormValidationResult } from "@/dryv";
+import {DryvForm, DryvFormValidationResult, DryvValidationSet} from "@/dryv";
+import Component from "vue-class-component";
 
-export default Vue.extend({
-  data() {
-    return {
-      hasErrors: false,
-      hasWarnings: false,
-      $dryvForm: null,
-    };
-  },
-  computed: {
-    success(): boolean {
-      return !this.hasErrors && !this.hasWarnings;
-    },
-  },
-  created() {
-    (this as DryvueFormVue).$dryvForm = new DryvForm();
-  },
-  methods: {
-    async validate(validationSet: string, model: any): Promise<DryvFormValidationResult | null> {
-      const dryvForm = (this as DryvueFormVue).$dryvForm;
-      if (!dryvForm) {
-        this.hasErrors = false;
-        this.hasWarnings = false;
-      }
+@Component
+export class DryvueForm extends Vue {
+    hasErrors = false;
+    hasWarnings = false;
+    $dryv: {
+        form: DryvForm,
+        validate: (validationSet: DryvValidationSet | string, model: unknown) => Promise<DryvFormValidationResult | null>
+    } = {form: undefined as any, validate: undefined as any};
 
-      const results = await ((dryvForm as any) as DryvForm).validate(
-        validationSet,
-        model
-      );
-      this.hasErrors = (results?.errors?.length ?? 0) > 0;
-      this.hasWarnings = (results?.warnings?.length ?? 0) > 0;
+    get success(): boolean {
+        return !this.hasErrors && !this.hasWarnings;
+    }
 
-      return results;
-    },
-  },
-});
+    created() {
+        this.$dryv = {
+            form: new DryvForm(),
+            validate: (s, m) => validate(this, s, m)
+        };
+    }
+}
+
+async function validate(vueForm: DryvueForm, validationSet: DryvValidationSet | string, model: unknown): Promise<DryvFormValidationResult | null> {
+    vueForm.hasErrors = false;
+    vueForm.hasWarnings = false;
+
+    const results = await vueForm.$dryv.form.validate(validationSet, model);
+
+    vueForm.hasErrors = (results?.errors?.length ?? 0) > 0;
+    vueForm.hasWarnings = (results?.warnings?.length ?? 0) > 0;
+
+    return results;
+}

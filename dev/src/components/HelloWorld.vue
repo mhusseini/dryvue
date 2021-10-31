@@ -18,14 +18,14 @@
 
 <script lang="ts">
 import Vue from "vue";
+import {DryvueForm} from "@/dryvue";
 import FormField from "./form-field.vue";
 import FormGroup from "./form-group";
-import DryvForm from "../dryvue/DryvueForm";
 import Container from "./container.vue";
 
 export default Vue.extend({
   components: {FormField, FormGroup, Container},
-  mixins: [DryvForm],
+  mixins: [DryvueForm],
   data() {
     return {
       model: {
@@ -36,7 +36,7 @@ export default Vue.extend({
   },
   methods: {
     async send() {
-      await (this as any).validate("form1", this.model);
+      await this.$dryv.validate("form1", this.model);
     },
   },
 });

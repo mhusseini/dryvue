@@ -6,35 +6,6 @@ import {
 import DryvField from "@/dryv/DryvField";
 
 describe("DryvForm", () => {
-    it("correctly finds related fields.", async () => {
-        const validate = jest.fn();
-        validate.mockReturnValue(Promise.resolve({group: "g", text: "error"}));
-        const validationSet: DryvValidationSet = {
-            validators: {
-                field1: [{group: "g", validate, related: ["field2"]}],
-                field2: [{group: "g", validate, related: ["field1"]}],
-                field3: [{group: "g", validate, related: ["field1"]}],
-                field4: [{group: "g", validate}],
-            },
-        };
-
-        const form = new DryvForm();
-        const field1 = form.registerField(new DryvField(form, "field1"));
-        const field2 = form.registerField(new DryvField(form, "field2"));
-        const field3 = form.registerField(new DryvField(form, "field3"));
-        const field4 = form.registerField(new DryvField(form, "field4"));
-
-        form["registerValidationSet"](validationSet);
-
-        const relatedFields = form.$getRelatedFields(field1);
-
-        expect(relatedFields.length).toEqual(2);
-        expect(relatedFields).toContain(field1);
-        expect(relatedFields).toContain(field2);
-        expect(relatedFields).not.toContain(field3);
-        expect(relatedFields).not.toContain(field4);
-    });
-
     it(" returns an error when a rule applies.", async () => {
         const validationSet: DryvValidationSet = {
             validators: {

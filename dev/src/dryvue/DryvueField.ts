@@ -1,111 +1,72 @@
-import Vue, {VNode} from "vue";
-import {DryvueFormVue} from "../dryvue";
-import {DryvValidationResult} from "@/dryv";
-import DryvField from "@/dryv/DryvField";
-import DryvForm from "@/dryv/DryvForm";
+import Vue from "vue";
+import Component from 'vue-class-component'
+import {DryvField, DryvRule, DryvValidationResult} from "@/dryv";
+import {findParentForm} from "@/dryvue/util/findParentForm";
+import {findFieldPath} from "@/dryvue/util/findFieldPath";
 
-export default Vue.extend({
-    data() {
-        return {
-            error: undefined as string | undefined,
-            warning: undefined as string | undefined,
-            isDirty: false,
-            isValidated: false,
-            showValidationResult: true,
-            annotations: [],
-            $dryvForm: undefined as DryvForm | undefined,
-            $dryvField: undefined as DryvField | undefined,
-        };
-    },
-    computed: {
-        success(): boolean {
-            return !this.error && !this.warning;
-        },
-    },
-    mounted() {
-        let parent = this.$parent as DryvueFormVue;
-        while (!parent.$dryvForm) {
-            if (!parent.$parent) {
-                return;
-            }
-            parent = parent.$parent as DryvueFormVue;
+@Component
+export class DryvueField extends Vue {
+    error: string | undefined = "";
+    warning: string | undefined = "";
+    isValidated = false;
+    showValidationResult = true;
+    annotations: { [name: string]: any } = {};
+    $dryv: {
+        field: DryvField,
+        validate: () => Promise<DryvValidationResult | undefined>
+    } = {field: undefined as any, validate: undefined as any}
+
+    get success(): boolean {
+        return !this.error && !this.warning;
+    }
+
+    mounted(): void {
+        const dryvForm = findParentForm(this);
+        if (!dryvForm) {
+            return;
         }
 
-        const dryvForm = parent.$dryvForm;
         const dryvField = new DryvField(dryvForm);
-        dryvField.validated = (r) => this.$onValidated(r);
 
-        let n: VNode | undefined = this.$vnode;
-        let path = "";
-        let sep = "";
-        while (n && n.componentInstance) {
-            const parentPath = this.$findPath(n);
-            if (parentPath) {
-                path = parentPath + sep + path;
-                sep = ".";
-            }
-            const p: Vue | null = n.componentInstance.$parent;
-            let el: Element | null = n.componentInstance.$el;
-
-            while (el && el != p?.$el) {
-                const add = el.getAttribute("data-dryv-path-add");
-                if (add) {
-                    path = parentPath + sep + path;
-                }
-                const remove = el.getAttribute("data-dryv-path-remove");
-                if (remove) {
-                    path = path.replace(new RegExp("^" + remove + "\\."), "");
-                }
-                el = el.parentElement;
-            }
-
-            if ((n.componentInstance as DryvueFormVue).$dryvForm) {
-                break;
-            }
-            n = p?.$vnode;
-        }
-
-        dryvField.path = path;
-
-        this.$dryvForm = dryvForm;
-        this.$dryvField = dryvField;
-
+        dryvField.path = findFieldPath(this);
+        dryvField.validated = r => onValidated(this, r);
+        dryvField.configured = r => onConfigured(this, r);
+        
         dryvForm.registerField(dryvField);
-    },
-    methods: {
-        async validate(): Promise<DryvValidationResult | undefined> {
-            return !this.$dryvField ? undefined : await this.$dryvField.revalidate();
-        },
-        $onValidated(result: DryvValidationResult | undefined) {
-            this.error = undefined;
-            this.warning = undefined;
-            this.isValidated = true;
-            this.showValidationResult = this.$dryvField?.showValidationResult !== false;
-            
-            if (!result) {
-                return;
-            }
 
-            if (result.type === "error") {
-                this.error = result.text;
-            } else if (result.type === "warning") {
-                this.warning = result.text;
-            }
-        },
-        $findPath(vnode: VNode) {
-            let n: VNode | undefined = vnode;
-            let path = "";
+        this.$dryv = {
+            field: dryvField,
+            validate: () => dryvField.revalidate()
+        };
+    }
+}
 
-            while (n) {
-                const data = n.data as any;
-                if (data && data.model && data.model.expression) {
-                    path = data.model.expression + (path ? "." + path : "");
-                }
 
-                n = n.parent;
-            }
+function onValidated(vueField: DryvueField, result: DryvValidationResult | undefined): void {
+    vueField.error = undefined;
+    vueField.warning = undefined;
+    vueField.isValidated = true;
+    vueField.showValidationResult = vueField.$dryv?.field.showValidationResult !== false;
 
-            return path;
-        },
-    },
-});
+    if (!result) {
+        return;
+    }
+
+    if (result.type === "error") {
+        vueField.error = result.text;
+    } else if (result.type === "warning") {
+        vueField.warning = result.text;
+    }
+}
+
+function onConfigured(vueField: DryvueField, rules: Array<DryvRule>) {
+    vueField.annotations = {};
+    rules
+        .filter(r => (r.annotations?.length ?? 0) > 0)
+        .map(r => r.annotations)
+        .flat()
+        .map(anns => anns && Object.entries(anns).map(x => ({key: x[0], value: x[1]})))
+        .filter(ann => ann)
+        .flat()
+        .forEach(ann => ann && (vueField.annotations[ann.key] = vueField.annotations[ann.value]));
+}

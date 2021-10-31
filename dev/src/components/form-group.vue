@@ -8,7 +8,7 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import DryvueGroup from "../dryvue/DryvueGroup";
+import {DryvueGroup} from "@/dryvue";
 
 export default Vue.extend({
   mixins: [DryvueGroup]

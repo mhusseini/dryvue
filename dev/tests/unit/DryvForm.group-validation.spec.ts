@@ -1,8 +1,7 @@
-import DryvForm from "@/dryv/DryvForm";
 import {
+    DryvForm, DryvGroup,
     DryvValidationSet,
 } from "@/dryv";
-import DryvGroup from "@/dryv/DryvGroup";
 
 describe("DryvForm", () => {
     const validate = (m: any): any => Promise.resolve(m.field1 && m.field2 ? null : "This is an error");

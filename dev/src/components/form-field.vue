@@ -8,19 +8,19 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import DryvueField from "../dryvue/DryvueField";
+import {DryvueField} from "@/dryvue";
 
 export default Vue.extend({
   mixins: [DryvueField],
   props: ["value"],
   watch: {
     async value() {
-      await (this as any).validate();
+      await this.$dryv.validate();
     },
   },
   methods: {
     async changed() {
-      this.$emit("input", (this.$refs.input as any).value);
+      this.$emit("input", (this.$refs.input as HTMLInputElement).value);
     },
   },
 });

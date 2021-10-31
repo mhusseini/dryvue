@@ -1,54 +1,55 @@
 import Vue from "vue";
-import {DryvueFormVue} from "../dryvue";
-import {DryvValidationResult} from "@/dryv";
-import DryvGroup from "@/dryv/DryvGroup";
+import {DryvGroup, DryvValidationResult} from "@/dryv";
+import Component from "vue-class-component";
+import {findParentForm} from "@/dryvue/util/findParentForm";
 
-export default Vue.extend({
-    props: ["name"],
-    data() {
-        return {
-            error: undefined as string | undefined,
-            warning: undefined as string | undefined,
-        };
-    },
-    computed: {
-        success(): boolean {
-            return !this.error && !this.warning;
-        },
-    },
+const DryvueGroupProps = Vue.extend({
+    props: {
+        name: String
+    }
+})
+
+@Component
+export class DryvueGroup extends DryvueGroupProps {
+    error: string | undefined = "";
+    warning: string | undefined = "";
+    $dryv: {
+        group: DryvGroup
+    } = {group: {} as any}
+
+
+    get success(): boolean {
+        return !this.error && !this.warning;
+    }
+
     mounted() {
-        let parent = this.$parent as DryvueFormVue;
-        while (!parent.$dryvForm) {
-            if (!parent.$parent) {
-                return;
-            }
-            parent = parent.$parent as DryvueFormVue;
+        const dryvForm = findParentForm(this);
+        if (!dryvForm) {
+            return;
         }
 
-        const dryvForm = parent.$dryvForm;
         const dryvGroup = new DryvGroup(this.name, dryvForm);
-
-        dryvGroup.handle = result => this.handleValidation(result);
-
         dryvForm.registerGroup(dryvGroup);
-    },
-    methods: {
-        handleValidation: function (result?: DryvValidationResult) {
-            switch (result?.type) {
-                case "error":
-                    this.error = result?.text;
-                    this.warning = undefined;
-                    break;
-                case "warning":
-                    this.error = undefined;
-                    this.warning = result?.text;
-                    break;
-                default:
-                    this.error = undefined;
-                    this.warning = undefined;
-                    break;
-            }
-            return true;
-        },
+
+        dryvGroup.handle = r => handleValidation(this, r);
+        this.$dryv = {group: dryvGroup};
     }
-});
+}
+
+function handleValidation(group: DryvueGroup, result?: DryvValidationResult) {
+    switch (result?.type) {
+        case "error":
+            group.error = result?.text;
+            group.warning = undefined;
+            break;
+        case "warning":
+            group.error = undefined;
+            group.warning = result?.text;
+            break;
+        default:
+            group.error = undefined;
+            group.warning = undefined;
+            break;
+    }
+    return true;
+}

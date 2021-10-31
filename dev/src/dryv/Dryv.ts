@@ -30,8 +30,8 @@ async function defaultCall(method: "GET" | "POST", url: string, data: any): Prom
     return response.data;
 }
 
-export default class Dryv {
-    static _config: DryvConfiguration;
+export class Dryv {
+    private static _config: DryvConfiguration;
     static get config(): DryvConfiguration {
         return !Dryv._config ? Dryv.configure({}) : Dryv._config;
     }
