@@ -1,7 +1,7 @@
 <template>
   <div>
     <span>{{ label }}</span><span v-if="annotations.required">*</span>
-    <input :value="value" @input="changed" ref="input" v-bind:class="{error}"/>
+    <slot :value="value" :changed="changed" :error="error" :warning="warning" :success="success"></slot>
     <p v-if="error && showValidationResult">{{ error }} </p>
     <p v-if="warning && showValidationResult">{{ warning }} </p>
     <p v-if="success && isValidated">&#x2713;</p>
@@ -24,8 +24,8 @@ export default Vue.extend({
     this.configureDryv({debounce: this.debounce});
   },
   methods: {
-    async changed() {
-      this.$emit("input", (this.$refs.input as HTMLInputElement).value);
+    async changed(value: any) {
+      this.$emit("input", value);
       this.$dryv.validate();
     },
   },

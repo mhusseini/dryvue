@@ -1,18 +1,23 @@
 import {
     Dryv,
     DryvConfiguration,
-    DryvFormOptions,
+    DryvFormValidationContext, DryvFormValidationResult,
     DryvGroupOptions,
     DryvOptions,
     DryvValidationResult,
     DryvValidationSet
-} from "./index";
-import {DryvFormValidationContext, DryvFormValidationResult} from ".";
+} from "./types";
 import {windowDryvValidationSetProvider} from "./DryvValidationSetProvider";
 import {DryvField} from "@/dryv/DryvField";
 import {DryvGroup} from "@/dryv/DryvGroup";
 import {validate} from "@/dryv/validation/form-validation";
 import {calculateHash} from "@/dryv/util/calculateHash";
+
+export interface DryvFormOptions {
+    validationSet: DryvValidationSet | string;
+    handleResult?: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    valueOfDate?: (value: string, locale: string, format: string) => unknown;
+}
 
 export class DryvForm {
     private disableRecalculation = false;

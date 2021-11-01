@@ -1,5 +1,6 @@
-import {DryvField, DryvFormValidationContext, DryvRule, DryvValidationResult} from "@/dryv";
+import {DryvField} from "@/dryv";
 import {beginValidation, endValidation} from "@/dryv/validation/form-validation";
+import {DryvFormValidationContext, DryvRule, DryvValidationResult} from "@/dryv/types";
 
 interface DryvFieldPrivate {
     validationRun: number;
@@ -72,14 +73,21 @@ async function validateUntilFirstError(field: DryvField,
 
     const childContext = Object.assign({}, context, {dryv: field.options});
     const nextStack = stack.concat([field.path]);
+    const awaitingFields = context.awaitedFields[field.path] ?? (context.awaitedFields[field.path] = {});
 
     for (const rule of field.rules) {
-        const groupValidatingField = rule.group && context.groupValidatingField[rule.group]?.path;
-        const promises = rule.related?.filter(path => path !== groupValidatingField && stack.indexOf(path) < 0);
+        const promises = rule.related?.filter(path => !awaitingFields[path]);
 
         if (rule.group) {
             context.groupValidatingField[rule.group] = field;
         }
+
+        promises
+            ?.forEach(child => {
+                const awaiting = context.awaitedFields[child] ?? (context.awaitedFields[child] = {});
+                console.log(`*** Field ${field.path} as waiting for ${child}.`)
+                nextStack.forEach(path => awaiting[path] = true);
+            })
 
         await Promise.all(promises
                 ?.map(path => field.form.fields[path]?.validate(model, context, nextStack))

@@ -2,10 +2,9 @@ import Vue from "vue";
 import {
     DryvForm,
     DryvFormOptions,
-    DryvFormValidationResult,
-    DryvValidationResult,
 } from "@/dryv";
 import Component from "vue-class-component";
+import {DryvFormValidationResult, DryvValidationResult} from "@/dryv/types";
 
 @Component
 export class DryvueForm extends Vue {
@@ -22,7 +21,7 @@ export class DryvueForm extends Vue {
     }
 
     configureDryv(options: DryvFormOptions | string) {
-        if(typeof options === "string"){
+        if (typeof options === "string") {
             options = {validationSet: options} as DryvFormOptions;
         }
         this.$dryv = {

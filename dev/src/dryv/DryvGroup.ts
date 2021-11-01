@@ -1,6 +1,11 @@
-import {DryvGroupOptions, DryvValidationResult} from "@/dryv/index";
+import { DryvValidationResult} from "@/dryv//types";
 import {DryvField} from "@/dryv/DryvField";
 import {DryvForm} from "@/dryv/DryvForm";
+
+export interface DryvGroupOptions {
+    handle?: (validationResult?: DryvValidationResult) => boolean | undefined;
+    validated?: (validationResult?: DryvValidationResult) => void;
+}
 
 export class DryvGroup {
     validationResult?: DryvValidationResult;

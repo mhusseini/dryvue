@@ -39,7 +39,7 @@ function findNodePath(vnode: VNode) {
     let n: VNode | undefined = vnode;
     let path = "";
 
-    while (n) {
+    while (n && (!n.componentInstance || n.componentInstance === vnode.componentInstance)) {
         const data = n.data as any;
         if (data && data.model && data.model.expression) {
             path = data.model.expression + (path ? "." + path : "");

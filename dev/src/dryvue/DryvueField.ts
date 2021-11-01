@@ -1,9 +1,9 @@
 import Vue from "vue";
 import Component from 'vue-class-component'
-import {DryvField, DryvFieldOptions, DryvValidationResult} from "@/dryv";
+import {DryvField,} from "@/dryv";
+import {DryvFieldOptions, DryvValidationResult} from "@/dryv/types";
 import {findParentForm} from "@/dryvue/util/findParentForm";
 import {findFieldPath} from "@/dryvue/util/findFieldPath";
-
 @Component
 export class DryvueField extends Vue {
     error: string | undefined = "";

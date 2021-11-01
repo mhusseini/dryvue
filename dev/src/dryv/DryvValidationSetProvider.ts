@@ -1,4 +1,4 @@
-import {DryvValidationSetProvider} from ".";
+import {DryvValidationSetProvider} from "./types";
 
 export const windowDryvValidationSetProvider: DryvValidationSetProvider = {
   get(validationSetName) {

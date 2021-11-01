@@ -1,7 +1,14 @@
-import {DryvFieldOptions, DryvFormValidationContext, DryvRule, DryvValidationResult} from ".";
+import { DryvFormValidationContext, DryvRule, DryvValidationResult} from "./types";
 import {DryvForm} from "./DryvForm";
 import {DryvGroup} from "@/dryv/DryvGroup";
 import {validate, revalidate} from "@/dryv/validation/field-validation";
+
+export interface DryvFieldOptions {
+    validated?: (field: DryvField) => void;
+    debounce?: number;
+    handleResult?: (context: DryvFormValidationContext, model: unknown, path: string, ruleName: string, result: DryvValidationResult) => void;
+    valueOfDate?: (value: string, locale: string, format: string) => unknown;
+}
 
 export class DryvField {
     isDisabled = false;

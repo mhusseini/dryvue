@@ -2,12 +2,12 @@
   <div data-dryv-path-remove="model">
     <div>
       <form-group name="name-group">
-        <form-field v-model="model.anrede"></form-field>
-        <form-field v-model="model.vorname"></form-field>
-        <form-field v-model="model.nachname"></form-field>
-        <form-field v-model="model.geburtsdatum"></form-field>
-        <form-field v-model="model.emailAdresse"></form-field>
-        <form-field v-model="model.telefonNummer"></form-field>
+        <form-field-text v-model="model.anrede"></form-field-text>
+        <form-field-text v-model="model.vorname"></form-field-text>
+        <form-field-text v-model="model.nachname"></form-field-text>
+        <form-field-text v-model="model.geburtsdatum"></form-field-text>
+        <form-field-text v-model="model.emailAdresse"></form-field-text>
+        <form-field-text v-model="model.telefonNummer"></form-field-text>
       </form-group>
       <button @click="send()">Send</button>
     </div>
@@ -17,13 +17,13 @@
 <script lang="ts">
 import Vue from "vue";
 import {DryvueForm} from "@/dryvue";
-import FormField from "./form-field.vue";
+import FormFieldText from "./form-field-text.vue";
 import FormGroup from "./form-group";
 import axios from "axios"
-import {DryvFormValidationContext, DryvValidationResult} from "@/dryv";
+import {DryvFormValidationContext, DryvValidationResult} from "@/dryv/types";
 
 export default Vue.extend({
-  components: {FormField, FormGroup},
+  components: {FormFieldText, FormGroup},
   mixins: [DryvueForm],
   data() {
     return {

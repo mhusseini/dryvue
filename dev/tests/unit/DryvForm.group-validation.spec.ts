@@ -1,7 +1,4 @@
-import {
-    DryvForm, DryvGroup,
-    DryvValidationSet,
-} from "@/dryv";
+import {DryvForm, DryvValidationSet} from "@/dryv/types";
 
 describe("DryvForm", () => {
     const validate = (m: any): any => Promise.resolve(m.field1 && m.field2 ? null : "This is an error");
@@ -37,7 +34,7 @@ describe("DryvForm", () => {
             validators: {
                 field1: [{group: "g", validate}],
                 field2: [
-                    {validate: m => Promise.resolve(m.field2 ? undefined : "error")},
+                    {validate: (m: any) => Promise.resolve(m.field2 ? undefined : "error")},
                     {group: "g", validate}],
             },
         };
@@ -56,7 +53,7 @@ describe("DryvForm", () => {
             validators: {
                 field1: [{group: "g", validate, related: ["field2"]}],
                 field2: [
-                    {validate: m => Promise.resolve("error")},
+                    {validate: () => Promise.resolve("error")},
                     {group: "g", validate, related: ["field1"]}],
             },
         };
@@ -156,9 +153,9 @@ describe("DryvForm", () => {
         let groupError: string | undefined;
 
         const form = new DryvForm({validationSet}, "field1", "field2");
-        form.fields.field1.validated = () => field1Error = form.fields.field1.validationResult?.text;
-        form.fields.field2.validated = () => field2Error = form.fields.field2.validationResult?.text;
-        form.registerGroup("g").handle = () => {
+        form.fields.field1.options.validated = () => field1Error = form.fields.field1.validationResult?.text;
+        form.fields.field2.options.validated = () => field2Error = form.fields.field2.validationResult?.text;
+        form.registerGroup("g").options.handle = () => {
             groupError = form.groups.g.validationResult?.text;
             return true;
         };
@@ -181,14 +178,14 @@ describe("DryvForm", () => {
         expect(field2Error).toBeUndefined();
         expect(groupError).toBeUndefined();
 
-        model.field1 = "";
+        model.field2 = "";
 
         await form.fields.field2.revalidate();
 
-        expect(form.fields.field1.showValidationResult).toBeFalsy();
+        expect(form.fields.field1.showValidationResult).toBeTruthy();
         expect(form.fields.field2.showValidationResult).toBeTruthy();
-        expect(field1Error).not.toBeUndefined();
+        expect(field1Error).toBeUndefined();
         expect(field2Error).not.toBeUndefined();
-        expect(groupError).not.toBeUndefined();
+        expect(groupError).toBeUndefined();
     });
 });

@@ -1,7 +1,8 @@
 import Vue from "vue";
-import {DryvGroup, DryvGroupOptions, DryvValidationResult} from "@/dryv";
+import {DryvGroup, DryvGroupOptions} from "@/dryv";
 import Component from "vue-class-component";
 import {findParentForm} from "@/dryvue/util/findParentForm";
+import {DryvValidationResult} from "@/dryv/types";
 
 const DryvueGroupProps = Vue.extend({
     props: {
