@@ -370,6 +370,11 @@ export default function (o) {
             const component = vnode.componentInstance || vnode.context;
             const hierarchy = findFormComponent(vnode);
             const formComponent = hierarchy.formComponent;
+			if(!formComponent){
+				Vue.util.warn(`No formcomponent found for directive.`);
+				return;
+			}
+			
             const $dryv = formComponent.$dryv;
 
             const directiveOptions = getDirectiveOptions(hierarchy.directives, options, vnode, $dryv);
